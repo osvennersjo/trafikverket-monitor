@@ -59,9 +59,7 @@ export class TrafikverketMonitorV2 {
       fromEmail: 'noreply@trafikverket-monitor.com'
     });
     
-    // Initialize with current working session (will need refresh mechanism)
-    this.updateSessionData();
-    
+    // Create HTTP client first
     this.httpClient = axios.create({
       baseURL: 'https://fp.trafikverket.se',
       timeout: 10000,
@@ -82,6 +80,9 @@ export class TrafikverketMonitorV2 {
         'sec-ch-ua-platform': '"Android"'
       }
     });
+    
+    // Initialize session data after HTTP client is created
+    this.updateSessionData();
   }
 
   private updateSessionData() {
