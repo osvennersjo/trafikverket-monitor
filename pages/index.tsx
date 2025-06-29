@@ -326,6 +326,26 @@ export default function Home() {
 
             {/* Right Column - Sean Paul & Info */}
             <div className="space-y-6">
+              {/* Judo Champion Section */}
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">
+                  🥇 Judo Champion Motivation
+                </h3>
+                <div className="mb-4">
+                  <img
+                    src="/judo-champion.jpg"
+                    alt="Judo Champion"
+                    className="w-64 h-80 mx-auto object-cover shadow-lg rounded-lg"
+                  />
+                </div>
+                <p className="text-gray-700 font-medium text-lg">
+                  "2 sm guld, 0 körkort, 100 bilar från vänster, 5 ratsingen"
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  🏆 From podium to pedals - time to conquer the road!
+                </p>
+              </div>
+
               {/* Sean Paul Section */}
               <div className="bg-white rounded-xl shadow-lg p-6 text-center">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
