@@ -811,6 +811,109 @@ export default function Home() {
                       '🕐 Test Time Manipulation & Parse Data'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/quick-time-test', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('⚡ Quick Time Test Results:', data);
+                        
+                        if (data.success) {
+                          const message = data.conclusion || `⚡ Quick Test: ${data.summary.successful}/${data.summary.total} successful in ${data.performance.totalTime}`;
+                          showMessage(message, data.summary.timeManipulationWorks ? 'success' : 'info');
+                          
+                          console.log('📊 Quick Test Summary:', data.summary);
+                          console.log('📋 Quick Test Results:', data.results);
+                          console.log('💡 Recommendations:', data.recommendations);
+                          console.log('⏱️ Performance:', data.performance);
+                          
+                          if (data.summary.timeManipulationWorks) {
+                            console.log('🎉 BREAKTHROUGH! Time manipulation confirmed working!');
+                          }
+                        } else {
+                          showMessage(`❌ Quick time test failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to run quick time test', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Quick Testing...
+                      </>
+                    ) : (
+                      '⚡ Quick Time Test (Anti-Timeout)'
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-v2-monitor', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            email: email,
+                            fromDate: fromDate,
+                            toDate: toDate
+                          })
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🚀 V2 Monitor Test Results:', data);
+                        
+                        if (data.success) {
+                          showMessage(`🚀 V2 Monitor test successful! ${data.sessionTest?.occasionCount || 0} occasions found`, 'success');
+                          
+                          console.log('📊 V2 Features:', data.features);
+                          console.log('🔧 Session Test:', data.sessionTest);
+                          console.log('📊 Monitor Status:', data.monitorStatus);
+                          console.log('💡 Next Steps:', data.nextSteps);
+                          console.log('🔗 API Structure:', data.apiStructure);
+                        } else {
+                          showMessage(`⚠️ V2 Monitor session issue: ${data.error}`, 'info');
+                          console.log('🔧 Session Test:', data.sessionTest);
+                          console.log('💡 Recommendations:', data.recommendations);
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to test V2 monitor', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-violet-600 hover:bg-violet-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing V2...
+                      </>
+                    ) : (
+                      '🚀 Test V2 Monitor (Working Session Format!)'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
