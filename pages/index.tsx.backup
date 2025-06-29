@@ -379,49 +379,6 @@ export default function Home() {
                       '🔍 Discover Current APIs'
                     )}
                   </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-xhr-requests', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🎯 Occasion-Bundles Test Results:', data);
-                        
-                        if (data.summary) {
-                          const message = `🎯 Occasion-Bundles: ${data.summary.successful}/${data.summary.total} strategies worked! Best: ${data.summary.bestStrategy}`;
-                          showMessage(message, data.summary.successful > 0 ? 'success' : 'error');
-                          
-                          if (data.promising.length > 0) {
-                            console.log('🏆 Promising Results:', data.promising);
-                          }
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test occasion-bundles', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Goldmine...
-                      </>
-                    ) : (
-                      '🏆 Test Occasion-Bundles (1,902 kB Goldmine!)'
-                    )}
-                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
