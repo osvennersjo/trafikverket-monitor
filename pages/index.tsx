@@ -333,7 +333,7 @@ export default function Home() {
                 </h3>
                 <div className="mb-4">
                   <img
-                    src="https://images.unsplash.com/photo-1565992441121-4367c2967103?w=300&h=400&fit=crop&crop=face"
+                    src="https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/476832982_4732982466980341_7968754554300336412_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=3a1ebe&_nc_ohc=hzxGbzJbLXQQ7kNvwG6thrZ&_nc_oc=AdnI1BkMnZ30oHepgh7ok7LrRUo1fxYhAIfbirk-22FnLHu0egY8C5TtYMzsFwr1BeB0q75PQtm8jVZN9OdYN8Cs&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=L9M080oI4fwRkt8gnRY2Gg&oh=00_AfOEPnG0Vop-iai_PzYgesTKJe5X9RY-NCI1bbwbUAzowg&oe=686777D3"
                     alt="Carl Dyckner - BJJ Champion"
                     className="w-64 h-80 mx-auto object-cover shadow-lg rounded-lg"
                   />
