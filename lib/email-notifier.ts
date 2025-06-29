@@ -1,60 +1,69 @@
-import * as nodemailer from 'nodemailer';
-
 interface EmailConfig {
-  smtpHost: string;
-  smtpPort: number;
-  smtpUser: string;
-  smtpPassword: string;
+  sendgridApiKey: string;
   fromEmail: string;
 }
 
 export class EmailNotifier {
-  private transporter: nodemailer.Transporter;
   private config: EmailConfig;
 
   constructor(config: EmailConfig) {
     this.config = config;
-    
-    this.transporter = nodemailer.createTransport({
-      host: config.smtpHost,
-      port: config.smtpPort,
-      secure: config.smtpPort === 465, // true for 465, false for other ports
-      auth: {
-        user: config.smtpUser,
-        pass: config.smtpPassword,
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
   }
 
   async sendEmail(to: string, subject: string, text: string): Promise<void> {
     try {
-      if (!this.config.smtpUser || !this.config.smtpPassword) {
+      if (!this.config.sendgridApiKey) {
         console.log('🎉 DRIVING TEST SLOT FOUND! 🎉');
         console.log(`📧 Email would be sent to: ${to}`);
         console.log(`📋 Subject: ${subject}`);
         console.log(`📝 Message: ${text}`);
         console.log('🎵 Sean Paul says: "Just gimme the light... and your körkort!"');
         
-        // For now, we'll just log the notification
-        // TODO: Set up email service later
+        // No SendGrid API key configured
         return;
       }
 
       const htmlContent = this.convertTextToHtml(text);
 
-      const mailOptions = {
-        from: `"Trafikverket Monitor" <${this.config.fromEmail}>`,
-        to: to,
-        subject: subject,
-        text: text,
-        html: htmlContent
+      const emailData = {
+        personalizations: [
+          {
+            to: [{ email: to }],
+            subject: subject
+          }
+        ],
+        from: {
+          email: this.config.fromEmail,
+          name: "Trafikverket Monitor"
+        },
+        content: [
+          {
+            type: "text/plain",
+            value: text
+          },
+          {
+            type: "text/html",
+            value: htmlContent
+          }
+        ]
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent successfully to ${to}. Message ID: ${info.messageId}`);
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.sendgridApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailData)
+      });
+
+      if (response.ok) {
+        console.log(`✅ Email sent successfully to ${to} via SendGrid`);
+      } else {
+        const error = await response.text();
+        console.error('❌ SendGrid API error:', error);
+        throw new Error(`SendGrid API error: ${response.status}`);
+      }
       
     } catch (error) {
       console.error('❌ Failed to send email:', error);
@@ -162,16 +171,29 @@ export class EmailNotifier {
 
   async testConnection(): Promise<boolean> {
     try {
-      if (!this.config.smtpUser || !this.config.smtpPassword) {
-        console.log('ℹ️ Email credentials not configured - test skipped');
+      if (!this.config.sendgridApiKey) {
+        console.log('ℹ️ SendGrid API key not configured - test skipped');
         return true; // Don't fail if email is not configured
       }
 
-      await this.transporter.verify();
-      console.log('✅ Email connection test successful');
-      return true;
+      // Test SendGrid API connection with a simple request
+      const response = await fetch('https://api.sendgrid.com/v3/user/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config.sendgridApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        console.log('✅ SendGrid connection test successful');
+        return true;
+      } else {
+        console.error('❌ SendGrid connection test failed:', response.status);
+        return false;
+      }
     } catch (error) {
-      console.error('❌ Email connection test failed:', error);
+      console.error('❌ SendGrid connection test failed:', error);
       return false;
     }
   }

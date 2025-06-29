@@ -41,13 +41,10 @@ export default async function handler(
       monitoringInstance.stop();
     }
 
-    // Create email notifier (works without credentials for now)
+    // Create email notifier with SendGrid
     const emailNotifier = new EmailNotifier({
-      smtpHost: process.env.SMTP_HOST || 'localhost',
-      smtpPort: parseInt(process.env.SMTP_PORT || '587'),
-      smtpUser: process.env.SMTP_USER || '',
-      smtpPassword: process.env.SMTP_PASSWORD || '',
-      fromEmail: process.env.FROM_EMAIL || 'monitor@trafikverket.local',
+      sendgridApiKey: process.env.SENDGRID_API_KEY || '',
+      fromEmail: process.env.FROM_EMAIL || 'monitor@trafikverket-monitor.app',
     });
 
     // Create and start monitoring

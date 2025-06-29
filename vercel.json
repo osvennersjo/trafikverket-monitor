@@ -4,10 +4,7 @@
   "framework": "nextjs",
   "regions": ["arn1"],
   "env": {
-    "SMTP_HOST": "@smtp-host",
-    "SMTP_PORT": "@smtp-port",
-    "SMTP_USER": "@smtp-user",
-    "SMTP_PASSWORD": "@smtp-password",
+    "SENDGRID_API_KEY": "@sendgrid-api-key",
     "FROM_EMAIL": "@from-email"
   },
   "functions": {

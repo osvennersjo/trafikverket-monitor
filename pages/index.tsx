@@ -177,7 +177,7 @@ export default function Home() {
                     📍 <strong>Monitoring:</strong> Södertälje & Farsta<br />
                     🚗 <strong>Test Type:</strong> Manual B License<br />
                     🔄 <strong>Check Interval:</strong> Every 5 minutes<br />
-                    📧 <strong>Note:</strong> Notifications logged to console for now
+                    📧 <strong>Email:</strong> Powered by SendGrid ⚡
                   </p>
                 </div>
 
