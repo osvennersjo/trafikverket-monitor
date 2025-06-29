@@ -515,6 +515,51 @@ export default function Home() {
                       '🚀 Test UPDATED Monitoring System'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/quick-monitor-test', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('⚡ Quick Monitor Test Results:', data);
+                        
+                        if (data.success) {
+                          const message = data.message || `⚡ Quick test: ${data.endpointCount || 0} endpoints found in ${data.duration || 0}ms`;
+                          showMessage(message, data.discoveryResult ? 'success' : 'info');
+                          
+                          if (data.workingEndpoints && data.workingEndpoints.length > 0) {
+                            console.log('✅ Working Endpoints:', data.workingEndpoints);
+                          }
+                        } else {
+                          showMessage(`❌ Quick test failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to run quick test', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Quick Testing...
+                      </>
+                    ) : (
+                      '⚡ QUICK Test (Anti-Timeout)'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
