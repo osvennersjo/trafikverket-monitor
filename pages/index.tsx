@@ -700,6 +700,55 @@ export default function Home() {
                       '🔐 Test Authentication Methods'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-real-session', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🎯 Real Session Test Results:', data);
+                        
+                        if (data.success) {
+                          const message = data.conclusion || `🎯 Real Session: ${data.summary.successful}/${data.summary.total} successful, ${data.summary.withOccasions} with occasions!`;
+                          showMessage(message, data.summary.withOccasions > 0 ? 'success' : 'info');
+                          
+                          console.log('📊 Real Session Summary:', data.summary);
+                          console.log('📋 Real Session Results:', data.results);
+                          console.log('💡 Next Steps:', data.nextSteps);
+                          
+                          if (data.summary.withOccasions > 0) {
+                            console.log('🎉 BREAKTHROUGH! We can access real occasion data!');
+                          }
+                        } else {
+                          showMessage(`❌ Real session test failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to test real session', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-pink-600 hover:bg-pink-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing Real Session...
+                      </>
+                    ) : (
+                      '🎯 Test REAL Session (with cURL data!)'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}

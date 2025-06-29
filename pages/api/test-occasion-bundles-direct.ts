@@ -84,23 +84,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Analyze error response for 400 Bad Request
       if (err.response?.status === 400) {
-        console.log('🔍 400 Bad Request Analysis:');
+        console.log('='.repeat(50));
+        console.log('🔍 400 BAD REQUEST - SERVER ERROR RESPONSE:');
+        console.log('='.repeat(50));
         console.log('📊 Response data type:', typeof err.response.data);
-        console.log('📊 Response data:', JSON.stringify(err.response.data, null, 2));
         
-        // Try to extract specific error messages
         if (err.response.data) {
+          console.log('🚨 SERVER ERROR RESPONSE (this tells us what to fix):');
+          console.log(JSON.stringify(err.response.data, null, 2));
+          
           const errorData = err.response.data;
           if (typeof errorData === 'string') {
-            console.log('📊 Error string:', errorData);
+            console.log('📊 Server error string:', errorData);
           } else if (typeof errorData === 'object') {
-            console.log('📊 Error object keys:', Object.keys(errorData));
-            if (errorData.message) console.log('📊 Error message:', errorData.message);
-            if (errorData.error) console.log('📊 Error detail:', errorData.error);
-            if (errorData.errors) console.log('📊 Validation errors:', errorData.errors);
-            if (errorData.details) console.log('📊 Error details:', errorData.details);
+            console.log('📊 Server error object keys:', Object.keys(errorData));
+            if (errorData.message) console.log('🎯 Server message:', errorData.message);
+            if (errorData.error) console.log('🎯 Server error:', errorData.error);
+            if (errorData.errors) console.log('🎯 Server validation errors:', errorData.errors);
+            if (errorData.details) console.log('🎯 Server error details:', errorData.details);
+            if (errorData.title) console.log('🎯 Server error title:', errorData.title);
+            if (errorData.type) console.log('🎯 Server error type:', errorData.type);
           }
+        } else {
+          console.log('⚠️ No error response data from server');
         }
+        console.log('='.repeat(50));
       }
       
       // Check if it's an authentication error (expected)
