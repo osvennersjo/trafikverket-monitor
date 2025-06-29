@@ -67,7 +67,9 @@ export default async function handler(
         toDate
       });
     } else {
-      res.status(500).json({ error: 'Failed to start monitoring - no working API endpoints found' });
+      res.status(500).json({ 
+        error: 'Failed to start monitoring - could not connect to Trafikverket API endpoints. The website structure may have changed or there may be connectivity issues.' 
+      });
     }
 
   } catch (error) {

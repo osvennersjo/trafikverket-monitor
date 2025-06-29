@@ -177,15 +177,8 @@ export class TrafikverketMonitor {
 
     console.log(`📊 Found ${foundEndpoints} working endpoints`);
     
-    // If no endpoints found, try to simulate with mock data for testing
     if (foundEndpoints === 0) {
-      console.log('⚠️  No real endpoints found, using mock data for testing');
-      this.workingEndpoints['/mock/occasions'] = {
-        url: '/mock/occasions',
-        method: 'POST',
-        data: [] // Will be filled by searchForSlots
-      };
-      return true; // Allow monitoring to start even with mock data
+      console.log('❌ No working endpoints found - monitoring cannot start');
     }
     
     return foundEndpoints > 0;
