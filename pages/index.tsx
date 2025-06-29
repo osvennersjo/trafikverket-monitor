@@ -167,10 +167,17 @@ export default function Home() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      console.log('Email input changed:', e.target.value);
+                      setEmail(e.target.value);
+                    }}
                     placeholder="your.email@example.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  {/* Real-time email value display */}
+                  <div className="text-xs text-blue-600 mt-1">
+                    Current email value: "{email}" (length: {email.length})
+                  </div>
                   {email && (
                     <p className="text-sm text-green-600 mt-1">
                       ✅ Email entered - test button enabled
@@ -200,8 +207,13 @@ export default function Home() {
                   </button>
                   
                   {/* Debug information */}
-                  <div className="text-xs text-gray-500 mb-2 text-center">
-                    Debug: Email={email ? '✅' : '❌'} | Loading={isLoading ? '✅' : '❌'} | Disabled={isLoading || !email ? '✅' : '❌'}
+                  <div className="text-xs text-gray-500 mb-2 text-center border p-2 bg-gray-50">
+                    <strong>Debug Info:</strong><br/>
+                    Email value: "{email}" (Length: {email.length})<br/>
+                    Email truthy: {email ? 'TRUE' : 'FALSE'}<br/>
+                    !email: {!email ? 'TRUE' : 'FALSE'}<br/>
+                    isLoading: {isLoading ? 'TRUE' : 'FALSE'}<br/>
+                    Button disabled: {isLoading || !email ? 'TRUE' : 'FALSE'}
                   </div>
                   
                   {!email && (
