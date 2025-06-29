@@ -48,7 +48,7 @@ export class TrafikverketMonitor {
 
     this.httpClient = axios.create({
       baseURL: 'https://fp.trafikverket.se',
-      timeout: 15000,
+      timeout: 5000, // Reduced from 15s to 5s to prevent function timeouts
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json, text/plain, */*',
@@ -108,68 +108,60 @@ export class TrafikverketMonitor {
   private async discoverApiEndpoints(): Promise<boolean> {
     console.log('🔍 Discovering API endpoints...');
 
-    // Correct endpoints discovered through manual inspection
+    // Prioritized endpoints - test most promising ones first
     const endpointsToTest = [
-      // Main occasion search endpoint (the key one)
-      { path: '/Boka/occasion-bundles', method: 'POST' },
+      // Main occasion search endpoint (highest priority)
+      { path: '/Boka/occasion-bundles', method: 'POST', priority: 1 },
       
-      // Supporting endpoints discovered via XHR analysis
-      { path: '/boka/ng/api/search-information', method: 'GET' },
-      { path: '/boka/ng/api/get-navigation-model', method: 'GET' },
-      { path: '/boka/ng/api/information', method: 'GET' },
-      { path: '/boka/ng/api/is-system-updating', method: 'GET' },
-      { path: '/boka/ng/api/is-authorized', method: 'GET' },
+      // Most promising XHR endpoints
+      { path: '/boka/ng/api/search-information', method: 'GET', priority: 2 },
+      { path: '/boka/ng/api/is-system-updating', method: 'GET', priority: 2 },
+      { path: '/boka/ng/api/get-navigation-model', method: 'GET', priority: 3 },
       
-      // Fallback to old endpoints (probably won't work)
-      { path: '/boka/api/2.0/examinationTypes', method: 'GET' },
-      { path: '/boka/api/2.0/locations', method: 'GET' },
-      { path: '/boka/api/2.0/occasions', method: 'POST' },
+      // Lower priority endpoints
+      { path: '/boka/ng/api/information', method: 'GET', priority: 4 },
+      { path: '/boka/ng/api/is-authorized', method: 'GET', priority: 4 },
+      
+      // Fallback to old endpoints (lowest priority)
+      { path: '/boka/api/2.0/occasions', method: 'POST', priority: 5 },
     ];
 
-    let foundEndpoints = 0;
+    // Sort by priority and limit to prevent timeouts
+    const prioritizedEndpoints = endpointsToTest
+      .sort((a, b) => a.priority - b.priority)
+      .slice(0, 5); // Test only top 5 to prevent timeout
 
-    for (const endpoint of endpointsToTest) {
+    let foundEndpoints = 0;
+    const maxTimePerRequest = 2000; // 2 seconds max per request
+
+    for (const endpoint of prioritizedEndpoints) {
       try {
+        console.log(`🔍 Testing ${endpoint.method} ${endpoint.path}...`);
+        
         let response;
         
-        if (endpoint.method === 'GET') {
-          response = await this.httpClient.get(endpoint.path);
-        } else {
-          // For the main occasion-bundles endpoint, use proper payload structure
-          if (endpoint.path === '/Boka/occasion-bundles') {
-            const payload = {
-              bookingSession: {
-                socialSecurityNumber: '', // We'll try without SSN first
-                licenceId: 5, // B license
-                bookingModeId: 0
-              },
-              occasionBundleQuery: {
-                startDate: this.config.fromDate,
-                endDate: this.config.toDate,
-                locationId: null, // Search all locations initially
-                examinationTypeId: 5, // B license
-                tachographTypeId: 1,
-                occasionChoiceId: 1,
-                searchedMonths: 0
-              }
-            };
-            response = await this.httpClient.post(endpoint.path, payload);
-          } else {
-            // For other POST endpoints, try with empty payload
-            response = await this.httpClient.post(endpoint.path, {});
-          }
-        }
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Request timeout')), maxTimePerRequest);
+        });
+        
+        // Create request promise
+        const requestPromise = this.makeRequest(endpoint);
+        
+        // Race the request against the timeout
+        response = await Promise.race([requestPromise, timeoutPromise]);
         
         // Check if response contains actual data (not HTML redirect)
         const responseText = JSON.stringify(response.data);
         const isHtmlResponse = responseText.includes('<!doctype html>') || responseText.includes('<html');
         
         if ((response.status === 200 || response.status === 201) && !isHtmlResponse) {
-          console.log(`✅ Found working ${endpoint.method} endpoint: ${endpoint.path} (${response.data ? Object.keys(response.data).length : 0} keys)`);
+          console.log(`✅ Found working ${endpoint.method} endpoint: ${endpoint.path}`);
           this.workingEndpoints[endpoint.path] = {
             url: endpoint.path,
             method: endpoint.method,
-            data: response.data
+            data: response.data,
+            priority: endpoint.priority
           };
           foundEndpoints++;
         } else if (isHtmlResponse) {
@@ -178,7 +170,12 @@ export class TrafikverketMonitor {
       } catch (error: any) {
         const status = error.response?.status;
         const message = error.response?.data?.message || error.message;
-        console.log(`❌ Failed ${endpoint.method} ${endpoint.path}: ${status} - ${message}`);
+        
+        if (message === 'Request timeout') {
+          console.log(`⏰ ${endpoint.method} ${endpoint.path}: Timeout (${maxTimePerRequest}ms)`);
+        } else {
+          console.log(`❌ Failed ${endpoint.method} ${endpoint.path}: ${status} - ${message}`);
+        }
         
         // For occasion-bundles, authentication error is expected but means endpoint exists
         if (endpoint.path === '/Boka/occasion-bundles' && (status === 401 || status === 403)) {
@@ -187,17 +184,18 @@ export class TrafikverketMonitor {
             url: endpoint.path,
             method: 'POST',
             requiresAuth: true,
-            data: null
+            data: null,
+            priority: endpoint.priority
           };
           foundEndpoints++;
         }
       }
 
-      // Add delay between requests to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Small delay to prevent rate limiting, but much shorter
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
-    console.log(`📊 Found ${foundEndpoints} working endpoints`);
+    console.log(`📊 Found ${foundEndpoints} working endpoints (tested ${prioritizedEndpoints.length})`);
     
     if (foundEndpoints === 0) {
       console.log('❌ No working endpoints found - monitoring cannot start');
@@ -205,6 +203,36 @@ export class TrafikverketMonitor {
     }
     
     return foundEndpoints > 0;
+  }
+
+  private async makeRequest(endpoint: any): Promise<any> {
+    if (endpoint.method === 'GET') {
+      return await this.httpClient.get(endpoint.path);
+    } else {
+      // For the main occasion-bundles endpoint, use proper payload structure
+      if (endpoint.path === '/Boka/occasion-bundles') {
+        const payload = {
+          bookingSession: {
+            socialSecurityNumber: '', // We'll try without SSN first
+            licenceId: 5, // B license
+            bookingModeId: 0
+          },
+          occasionBundleQuery: {
+            startDate: this.config.fromDate,
+            endDate: this.config.toDate,
+            locationId: null, // Search all locations initially
+            examinationTypeId: 5, // B license
+            tachographTypeId: 1,
+            occasionChoiceId: 1,
+            searchedMonths: 0
+          }
+        };
+        return await this.httpClient.post(endpoint.path, payload);
+      } else {
+        // For other POST endpoints, try with empty payload
+        return await this.httpClient.post(endpoint.path, {});
+      }
+    }
   }
 
   private async findLocationIds(): Promise<boolean> {
