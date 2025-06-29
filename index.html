@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎿 Ski Equipment Query System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .query-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .example-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        
+        .example-btn:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+        
+        .response-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: none;
+        }
+        
+        .response-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1rem;
+            font-weight: 600;
+        }
+        
+        .response-content {
+            padding: 1.5rem;
+        }
+        
+        .query-display {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .response-text {
+            background: #e8f5e8;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 1rem;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .products {
+            margin-top: 1rem;
+        }
+        
+        .product {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎿 Ski Equipment Query System</h1>
+            <p>Ask any question about ski equipment and get expert recommendations!</p>
+        </div>
+        
+        <div class="query-form">
+            <div class="input-group">
+                <label for="examples">💡 Try these examples:</label>
+                <div class="examples">
+                    <div class="example-btn" onclick="setQuery('Which ski is best for powder?')">
+                        🎯 Which ski is best for powder?
+                    </div>
+                    <div class="example-btn" onclick="setQuery('Compare Armada ARV 94 vs K2 Reckoner 92')">
+                        ⚖️ Compare Armada ARV 94 vs K2 Reckoner 92
+                    </div>
+                    <div class="example-btn" onclick="setQuery('Is the Head Crux 105 good for beginners?')">
+                        🎓 Is Head Crux 105 good for beginners?
+                    </div>
+                    <div class="example-btn" onclick="setQuery('What&apos;s the waist width of Atomic Bent 110?')">
+                        📏 What's the waist width of Atomic Bent 110?
+                    </div>
+                    <div class="example-btn" onclick="setQuery('Show me all-mountain skis under 6000 SEK')">
+                        💰 Show me skis under 6000 SEK
+                    </div>
+                    <div class="example-btn" onclick="setQuery('Can Salomon QST handle icy conditions?')">
+                        🧊 Can Salomon QST handle ice?
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="query">🗣️ Your skiing question:</label>
+                <input 
+                    type="text" 
+                    id="query" 
+                    placeholder="e.g., Which ski is best for powder? or Compare two ski models"
+                    onkeypress="handleKeyPress(event)"
+                >
+            </div>
+            
+            <button class="submit-btn" onclick="submitQuery()" id="submitBtn">
+                🔍 Ask Question
+            </button>
+        </div>
+        
+        <div class="response-container" id="responseContainer">
+            <!-- Response will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+        
+        function setQuery(queryText) {
+            document.getElementById('query').value = queryText;
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                submitQuery();
+            }
+        }
+        
+        async function submitQuery() {
+            const query = document.getElementById('query').value.trim();
+            const submitBtn = document.getElementById('submitBtn');
+            const responseContainer = document.getElementById('responseContainer');
+            
+            if (!query) {
+                alert('Please enter a question!');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = '🤔 Thinking...';
+            responseContainer.style.display = 'block';
+            responseContainer.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Getting expert skiing advice...</p>
+                </div>
+            `;
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE_URL}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const endTime = Date.now();
+                const totalTime = endTime - startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Display results
+                displayResults(query, result, totalTime);
+                
+            } catch (error) {
+                responseContainer.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error</h3>
+                        <p>Failed to connect to the API server. Please make sure the Flask server is running at ${API_BASE_URL}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🔍 Ask Question';
+            }
+        }
+        
+        function displayResults(query, result, totalTime) {
+            const responseContainer = document.getElementById('responseContainer');
+            
+            const products = result.products || [];
+            const productsHtml = products.length > 0 ? `
+                <div class="products">
+                    <h3>🎯 Matched Products:</h3>
+                    ${products.slice(0, 3).map((product, index) => `
+                        <div class="product">
+                            <h4>🎿 ${index + 1}. ${product.title || 'Unknown Product'}</h4>
+                            <p><strong>Waist Width:</strong> ${product.waist_width_mm || 'N/A'}mm</p>
+                            <p><strong>Price:</strong> ${product.price || 'N/A'} SEK</p>
+                            <p><strong>Match Score:</strong> ${(product.match_score || 0).toFixed(2)}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+            
+            responseContainer.innerHTML = `
+                <div class="response-header">
+                    🎿 Expert Answer
+                </div>
+                <div class="response-content">
+                    <div class="query-display">
+                        <strong>📝 Your Question:</strong><br>
+                        <em>"${query}"</em>
+                    </div>
+                    
+                    <div class="response-text">
+                        ${result.response || 'No response received'}
+                    </div>
+                    
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">${(result.intent || 'unknown').charAt(0).toUpperCase() + (result.intent || 'unknown').slice(1)}</div>
+                            <div class="metric-label">Intent</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${Math.round((result.confidence || 0) * 100)}%</div>
+                            <div class="metric-label">Confidence</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${Math.round((result.processing_time || 0) * 1000)}ms</div>
+                            <div class="metric-label">Processing Time</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${products.length}</div>
+                            <div class="metric-label">Products Found</div>
+                        </div>
+                    </div>
+                    
+                    ${productsHtml}
+                    
+                    ${result.error ? `
+                        <div class="error">
+                            <strong>⚠️ Note:</strong> ${result.error}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 

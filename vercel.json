@@ -1,0 +1,18 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["arn1"],
+  "env": {
+    "SMTP_HOST": "@smtp-host",
+    "SMTP_PORT": "@smtp-port",
+    "SMTP_USER": "@smtp-user",
+    "SMTP_PASSWORD": "@smtp-password",
+    "FROM_EMAIL": "@from-email"
+  },
+  "functions": {
+    "pages/api/**/*.ts": {
+      "maxDuration": 60
+    }
+  }
+} 

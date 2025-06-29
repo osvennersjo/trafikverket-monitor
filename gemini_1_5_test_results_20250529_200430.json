@@ -1,0 +1,232 @@
+{
+  "timestamp": "20250529_200430",
+  "model": "gemini-1.5-flash",
+  "total_queries": 10,
+  "successful_queries": 10,
+  "average_response_time": 1.2999557495117187,
+  "total_time": 12.999557495117188,
+  "data_not_available_count": 3,
+  "results": [
+    {
+      "query_number": 1,
+      "query": "What are the exact waist width and turn radius of the Fischer Transalp 98 CTI 23/24, and do these specs make it efficient for uphill tours?",
+      "response": "The Fischer Transalp 98 CTI 23/24 has a waist width of 98mm.  The turn radius is not specified in the provided information.  A 98mm waist width is relatively narrow for a touring ski, which generally contributes to uphill efficiency. However,  without the turn radius, a complete assessment of its uphill efficiency cannot be made.",
+      "intent": "property query",
+      "response_time": 1.5289127826690674,
+      "quality": {
+        "has_data_not_available": true,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 331,
+        "issues": [
+          "Contains 'not specified'"
+        ],
+        "numbers_found": [
+          "98",
+          "23",
+          "24",
+          "98",
+          "98"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 2,
+      "query": "According to the spreadsheet, how much does the Salomon D\u00e9part 1.0 weigh in the 172 cm length?",
+      "response": "According to the specifications, the weight of the Salomon D\u00e9part 1.0 in the 172 cm length is not available.  The available lengths are 170cm and 180cm.",
+      "intent": "property query",
+      "response_time": 1.3614599704742432,
+      "quality": {
+        "has_data_not_available": true,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 152,
+        "issues": [
+          "Contains 'not available'"
+        ],
+        "numbers_found": [
+          "1.0",
+          "172",
+          "170",
+          "180"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 3,
+      "query": "Can the Armada Locator 104 23/24 handle mixed snow conditions given its recorded weight and dimensions?",
+      "response": "No.  While the Armada Locator 104's 104mm waist width suggests it can handle some snow conditions, the provided specifications lack information on weight and the specific characteristics needed to determine its performance in mixed snow.  More information, such as the ski's weight and construction details, is needed to assess its suitability for mixed snow conditions.",
+      "intent": "property query",
+      "response_time": 1.4878060817718506,
+      "quality": {
+        "has_data_not_available": false,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 370,
+        "issues": [],
+        "numbers_found": [
+          "104",
+          "104"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 4,
+      "query": "Compare the waist width and rocker profile of the Armada Declivity 92 Ti 25/26 and the Armada Locator 104 23/24 \u2014 which is more suited for variable snow?",
+      "response": "The provided data does not contain information on the Armada Declivity 92 Ti or the Armada Locator 104.  Therefore, I cannot compare them or determine which is better for variable snow conditions.",
+      "intent": "property query",
+      "response_time": 1.1946229934692383,
+      "quality": {
+        "has_data_not_available": false,
+        "has_measurements": false,
+        "has_comparison": true,
+        "has_specific_numbers": true,
+        "response_length": 196,
+        "issues": [],
+        "numbers_found": [
+          "92",
+          "104"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 5,
+      "query": "Between the Line Pandora 99 and the Line Chronic 94, which has a lighter weight and tighter turn radius for quick tree runs?",
+      "response": "The provided text does not contain information on the Line Pandora 99 or the Line Chronic 94 skis.  Therefore, I cannot answer your question.",
+      "intent": "property query",
+      "response_time": 1.2373249530792236,
+      "quality": {
+        "has_data_not_available": false,
+        "has_measurements": false,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 141,
+        "issues": [],
+        "numbers_found": [
+          "99",
+          "94"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 6,
+      "query": "Which ski has a narrower waist: the V\u00f6lkl Mantra 88 25/26 or the Nordica Enforcer 93 24/25, according to the catalog specs?",
+      "response": "The provided text does not contain waist width specifications for the V\u00f6lkl Mantra 88 or the Nordica Enforcer 93.  Therefore, I cannot answer your question.",
+      "intent": "property query",
+      "response_time": 1.133133888244629,
+      "quality": {
+        "has_data_not_available": false,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 156,
+        "issues": [],
+        "numbers_found": [
+          "88",
+          "93"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 7,
+      "query": "What is the weight per ski for the DPS Pagoda Tour1 100 RP, and how does it compare to the Faction Prodigy 4 24/25 in the same length?",
+      "response": "This question cannot be answered from the given source.  The provided text contains no information about the DPS Pagoda Tour1 100 RP or the Faction Prodigy 4 24/25 skis.",
+      "intent": "property query",
+      "response_time": 1.2443268299102783,
+      "quality": {
+        "has_data_not_available": true,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 169,
+        "issues": [
+          "Contains 'no information'"
+        ],
+        "numbers_found": [
+          "1",
+          "100",
+          "4",
+          "24",
+          "25"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 8,
+      "query": "How does the turn radius of the Rossignol Sender Soul 102 compare to the Fischer Ranger 102 FR 24/25, and what might that mean for big-mountain charging?",
+      "response": "This question cannot be answered from the given source.  The provided data does not contain information on the Rossignol Sender Soul 102 or the Fischer Ranger 102 FR 24/25.",
+      "intent": "property query",
+      "response_time": 1.2347970008850098,
+      "quality": {
+        "has_data_not_available": false,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 172,
+        "issues": [],
+        "numbers_found": [
+          "102",
+          "102",
+          "24",
+          "25"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 9,
+      "query": "Does the Salomon QST 100 Iceberg Green have a shorter turn radius than the Salomon QST Lux 92 Ti 24/25, and which offers better float based on waist width?",
+      "response": "The provided data does not contain information on the Salomon QST 100 Iceberg Green or the Salomon QST Lux 92 Ti 24/25, so I cannot answer your question.",
+      "intent": "property query",
+      "response_time": 1.3377270698547363,
+      "quality": {
+        "has_data_not_available": false,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 153,
+        "issues": [],
+        "numbers_found": [
+          "100",
+          "92",
+          "24",
+          "25"
+        ]
+      },
+      "success": true
+    },
+    {
+      "query_number": 10,
+      "query": "For carving precision, compare the sidecut dimensions and weight of the Head Supershape i.Magnum 24/25 with the Atomic Maverick 105 CTi 25/26.",
+      "response": "This question cannot be answered from the given source.  The provided data does not contain information on the Head Supershape i.Magnum 24/25 or the Atomic Maverick 105 CTi 25/26 skis.",
+      "intent": "property query",
+      "response_time": 1.2394459247589111,
+      "quality": {
+        "has_data_not_available": false,
+        "has_measurements": true,
+        "has_comparison": false,
+        "has_specific_numbers": true,
+        "response_length": 184,
+        "issues": [],
+        "numbers_found": [
+          "24",
+          "25",
+          "105",
+          "25",
+          "26"
+        ]
+      },
+      "success": true
+    }
+  ]
+}
