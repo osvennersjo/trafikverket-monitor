@@ -94,6 +94,36 @@ export default function Home() {
     }
   };
 
+  const testEmail = async () => {
+    if (!email) {
+      showMessage('Please enter an email address first', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showMessage(`✅ Test email sent to ${email}! Check your inbox.`, 'success');
+      } else {
+        showMessage(`❌ Test failed: ${data.details || data.error}`, 'error');
+      }
+    } catch (error) {
+      showMessage('❌ Failed to send test email', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     checkStatus();
     const interval = setInterval(checkStatus, 30000); // Check every 30 seconds
@@ -141,6 +171,23 @@ export default function Home() {
                     placeholder="your.email@example.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div>
+                  <button
+                    onClick={testEmail}
+                    disabled={isLoading || !email}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing...
+                      </>
+                    ) : (
+                      '🧪 Test Email Configuration'
+                    )}
+                  </button>
                 </div>
 
                 {/* Date Range */}
