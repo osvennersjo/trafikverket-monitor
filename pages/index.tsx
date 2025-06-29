@@ -422,6 +422,50 @@ export default function Home() {
                       '🏆 Test Occasion-Bundles (1,902 kB Goldmine!)'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-all-xhr-endpoints', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🎯 All XHR Endpoints Test Results:', data);
+                        
+                        if (data.summary) {
+                          const message = `🎯 XHR Test: ${data.summary.successful}/${data.summary.total} working, ${data.summary.promising} promising! Best: ${data.summary.bestEndpoint}`;
+                          showMessage(message, data.summary.promising > 0 ? 'success' : 'info');
+                          
+                          if (data.promising.length > 0) {
+                            console.log('🏆 Promising Endpoints:', data.promising);
+                            console.log('🔍 Check "search-information" and "get-active-reservations" results!');
+                          }
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to test XHR endpoints', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing All XHRs...
+                      </>
+                    ) : (
+                      '🎯 Test ALL XHR Endpoints (10 total)'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
