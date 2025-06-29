@@ -560,6 +560,50 @@ export default function Home() {
                       '⚡ QUICK Test (Anti-Timeout)'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-occasion-bundles-direct', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🎯 Direct Occasion-Bundles Test Results:', data);
+                        
+                        if (data.success) {
+                          showMessage(`✅ ${data.conclusion}`, 'success');
+                        } else {
+                          const message = data.conclusion || `❌ Test failed: ${data.error?.message || 'Unknown error'}`;
+                          showMessage(message, data.error?.status === 401 || data.error?.status === 403 ? 'info' : 'error');
+                        }
+                        
+                        console.log('📊 Response Analysis:', data.responseAnalysis);
+                        console.log('📤 Payload Used:', data.payload);
+                      } catch (error) {
+                        showMessage('❌ Failed to test occasion-bundles directly', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing Direct...
+                      </>
+                    ) : (
+                      '🎯 Test Direct Occasion-Bundles'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
