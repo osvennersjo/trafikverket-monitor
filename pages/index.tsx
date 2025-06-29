@@ -329,12 +329,12 @@ export default function Home() {
               {/* Judo Champion Section */}
               <div className="bg-white rounded-xl shadow-lg p-6 text-center">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                  🥇 Judo Champion Motivation
+                  🥇 Carl Dyckner - BJJ Champion Motivation
                 </h3>
                 <div className="mb-4">
                   <img
-                    src="/judo-champion.jpg"
-                    alt="Judo Champion"
+                    src="https://images.unsplash.com/photo-1565992441121-4367c2967103?w=300&h=400&fit=crop&crop=face"
+                    alt="Carl Dyckner - BJJ Champion"
                     className="w-64 h-80 mx-auto object-cover shadow-lg rounded-lg"
                   />
                 </div>
