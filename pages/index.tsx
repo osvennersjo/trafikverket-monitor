@@ -577,7 +577,14 @@ export default function Home() {
                           showMessage(`✅ ${data.conclusion}`, 'success');
                         } else {
                           const message = data.conclusion || `❌ Test failed: ${data.error?.message || 'Unknown error'}`;
-                          showMessage(message, data.error?.status === 401 || data.error?.status === 403 ? 'info' : 'error');
+                          const messageType = (data.error?.status === 401 || data.error?.status === 403 || data.error?.status === 400) ? 'info' : 'error';
+                          showMessage(message, messageType);
+                        }
+                        
+                        // Show detailed error info for 400 Bad Request
+                        if (data.error?.is400BadRequest && data.error?.responseData) {
+                          console.log('🔧 400 Bad Request Details:', data.error.responseData);
+                          console.log('💡 This means the endpoint exists but our payload needs fixing!');
                         }
                         
                         console.log('📊 Response Analysis:', data.responseAnalysis);

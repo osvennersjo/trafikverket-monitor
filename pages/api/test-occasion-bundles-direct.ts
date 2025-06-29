@@ -82,6 +82,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('📊 Error message:', err.message);
       console.log('📊 Error data:', err.response?.data);
       
+      // Analyze error response for 400 Bad Request
+      if (err.response?.status === 400) {
+        console.log('🔍 400 Bad Request Analysis:');
+        console.log('📊 Response data type:', typeof err.response.data);
+        console.log('📊 Response data:', JSON.stringify(err.response.data, null, 2));
+        
+        // Try to extract specific error messages
+        if (err.response.data) {
+          const errorData = err.response.data;
+          if (typeof errorData === 'string') {
+            console.log('📊 Error string:', errorData);
+          } else if (typeof errorData === 'object') {
+            console.log('📊 Error object keys:', Object.keys(errorData));
+            if (errorData.message) console.log('📊 Error message:', errorData.message);
+            if (errorData.error) console.log('📊 Error detail:', errorData.error);
+            if (errorData.errors) console.log('📊 Validation errors:', errorData.errors);
+            if (errorData.details) console.log('📊 Error details:', errorData.details);
+          }
+        }
+      }
+      
       // Check if it's an authentication error (expected)
       if (err.response?.status === 401 || err.response?.status === 403) {
         console.log('ℹ️ Authentication required (this is expected without proper session)');
@@ -96,7 +117,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
-        hasResponseData: !!error.response?.data
+        hasResponseData: !!error.response?.data,
+        responseData: error.response?.data,
+        is400BadRequest: error.response?.status === 400
       } : null,
       responseAnalysis,
       payload,
@@ -104,6 +127,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       conclusion: error ? 
         (error.response?.status === 401 || error.response?.status === 403 ? 
           '🔐 Endpoint exists but requires authentication (Bank ID)' :
+          error.response?.status === 400 ?
+          '🔧 Endpoint exists but payload format is wrong (400 Bad Request)' :
           '❌ Endpoint not accessible') :
         (responseAnalysis.isHtml ? 
           '❌ Endpoint returns HTML (redirect)' :
