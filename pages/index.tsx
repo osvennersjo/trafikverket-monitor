@@ -466,6 +466,55 @@ export default function Home() {
                       '🎯 Test ALL XHR Endpoints (10 total)'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-updated-monitor', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🚀 Updated Monitor Test Results:', data);
+                        
+                        if (data.success) {
+                          const message = data.message || `🚀 Updated Monitor: ${data.endpointCount} endpoints, ${data.slotsFound} slots found`;
+                          showMessage(message, data.discoveryResult ? 'success' : 'error');
+                          
+                          if (data.workingEndpoints && data.workingEndpoints.length > 0) {
+                            console.log('✅ Working Endpoints:', data.workingEndpoints);
+                          }
+                          
+                          if (data.slots && data.slots.length > 0) {
+                            console.log('🎯 Found Slots:', data.slots);
+                          }
+                        } else {
+                          showMessage(`❌ Updated monitor test failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to test updated monitor', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing Fixed Monitor...
+                      </>
+                    ) : (
+                      '🚀 Test UPDATED Monitoring System'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
