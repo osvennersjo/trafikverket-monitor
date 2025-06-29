@@ -15,7 +15,7 @@ export class EmailNotifier {
   constructor(config: EmailConfig) {
     this.config = config;
     
-    this.transporter = nodemailer.createTransporter({
+    this.transporter = nodemailer.createTransport({
       host: config.smtpHost,
       port: config.smtpPort,
       secure: config.smtpPort === 465, // true for 465, false for other ports

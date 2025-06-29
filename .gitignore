@@ -137,7 +137,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Note: Commented out lib/ to allow our TypeScript lib directory
+# lib/
 lib64/
 parts/
 sdist/
