@@ -1,6 +1,6 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  # Let @netlify/plugin-nextjs handle the publish directory automatically
 
 [build.environment]
   NODE_VERSION = "18"
@@ -9,15 +9,4 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[functions]
-  node_bundler = "esbuild"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200 
+# Remove manual redirects - let Next.js plugin handle routing 
