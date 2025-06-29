@@ -359,7 +359,7 @@ export default function Home() {
                   />
                 </div>
                 <blockquote className="text-gray-600 italic mb-4">
-                  "Just gimme the light and pass the doh... and your körkort!"
+                  "five million and footi nooti shawties! baby girl"
                 </blockquote>
                 <p className="text-sm text-gray-500">
                   🎶 While you wait for your test slot, bump some Sean Paul! 🎶

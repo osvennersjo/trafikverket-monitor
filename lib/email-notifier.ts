@@ -154,7 +154,7 @@ export class EmailNotifier {
           
           <div class="sean-paul-section">
             <h3>🎵 Sean Paul says:</h3>
-            <p><em>"Just gimme the light and pass the doh... and your körkort!"</em></p>
+            <p><em>"me want buy moto, me want build house"</em></p>
             <p>🎶 Good luck with your test! 🎶</p>
           </div>
           
