@@ -183,7 +183,11 @@ export default function Home() {
                   <button
                     onClick={testEmail}
                     disabled={isLoading || !email}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-2"
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-2 ${
+                      isLoading || !email 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                    }`}
                   >
                     {isLoading ? (
                       <>
@@ -194,9 +198,25 @@ export default function Home() {
                       '🧪 Test Email Configuration'
                     )}
                   </button>
+                  
+                  {/* Debug information */}
+                  <div className="text-xs text-gray-500 mb-2 text-center">
+                    Debug: Email={email ? '✅' : '❌'} | Loading={isLoading ? '✅' : '❌'} | Disabled={isLoading || !email ? '✅' : '❌'}
+                  </div>
+                  
                   {!email && (
                     <p className="text-sm text-gray-500 mb-4 text-center">
                       ↑ Enter an email address above to enable testing
+                    </p>
+                  )}
+                  {email && !isLoading && (
+                    <p className="text-sm text-green-600 mb-4 text-center">
+                      ✅ Button should be clickable now!
+                    </p>
+                  )}
+                  {isLoading && (
+                    <p className="text-sm text-orange-600 mb-4 text-center">
+                      ⏳ Please wait - operation in progress...
                     </p>
                   )}
                 </div>
