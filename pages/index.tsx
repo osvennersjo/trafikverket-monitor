@@ -171,13 +171,19 @@ export default function Home() {
                     placeholder="your.email@example.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  {email && (
+                    <p className="text-sm text-green-600 mt-1">
+                      ✅ Email entered - test button enabled
+                    </p>
+                  )}
                 </div>
 
+                {/* Test Email Button */}
                 <div>
                   <button
                     onClick={testEmail}
                     disabled={isLoading || !email}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4"
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-2"
                   >
                     {isLoading ? (
                       <>
@@ -188,6 +194,11 @@ export default function Home() {
                       '🧪 Test Email Configuration'
                     )}
                   </button>
+                  {!email && (
+                    <p className="text-sm text-gray-500 mb-4 text-center">
+                      ↑ Enter an email address above to enable testing
+                    </p>
+                  )}
                 </div>
 
                 {/* Date Range */}
