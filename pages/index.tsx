@@ -338,6 +338,64 @@ export default function Home() {
                       '🧪 Test Trafikverket APIs'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/discover-current-apis');
+                        const data = await response.json();
+                        console.log('🔍 API Discovery Results:', data);
+                        
+                        if (data.summary) {
+                          const message = `🔍 Discovery: ${data.summary.accessibleBaseUrls} base URLs accessible, ${data.summary.workingEndpoints} working endpoints found. Check console for details.`;
+                          showMessage(message, data.summary.workingEndpoints > 0 ? 'success' : 'info');
+                          
+                          if (data.recommendations) {
+                            console.log('📋 Recommendations:', data.recommendations);
+                          }
+                        } else {
+                          showMessage('🔍 API discovery completed - check console for details', 'info');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to run API discovery', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Discovering...
+                      </>
+                    ) : (
+                      '🔍 Discover Current APIs'
+                    )}
+                  </button>
+                </div>
+
+                {/* Manual Discovery Instructions */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <h3 className="font-semibold text-yellow-800 mb-2">🔧 Manual API Discovery</h3>
+                  <p className="text-sm text-yellow-700 mb-2">
+                    If automated discovery fails, follow these steps to find the current API endpoints:
+                  </p>
+                  <ol className="text-xs text-yellow-600 space-y-1 list-decimal list-inside">
+                    <li>Open <code className="bg-yellow-100 px-1 rounded">https://fp.trafikverket.se</code> in a new tab</li>
+                    <li>Press <code className="bg-yellow-100 px-1 rounded">F12</code> to open DevTools</li>
+                    <li>Go to <strong>Network</strong> tab in DevTools</li>
+                    <li>Try to book a test (navigate through the booking process)</li>
+                    <li>Look for API calls in the Network tab (especially POST requests)</li>
+                    <li>Note the endpoint URLs that return slot/location data</li>
+                    <li>Report the working endpoints back to this project</li>
+                  </ol>
                 </div>
 
                 {/* Date Range */}
