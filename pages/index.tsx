@@ -95,8 +95,10 @@ export default function Home() {
   };
 
   const testEmail = async () => {
-    if (!email) {
+    console.log('testEmail called, email state:', email);
+    if (!email || email.trim().length === 0) {
       showMessage('Please enter an email address first', 'error');
+      console.log('Email validation failed:', { email, trimmed: email.trim(), length: email.trim().length });
       return;
     }
 
