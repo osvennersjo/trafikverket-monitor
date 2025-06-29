@@ -25,26 +25,23 @@ A beautiful web application to monitor Swedish driving test availability with Se
 
    [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/trafikverket-monitor)
 
-2. **Set up environment variables** in Vercel dashboard:
-   - Go to your project settings → Environment Variables
+2. **Set up environment variables** in Netlify dashboard:
+   - Go to your site dashboard → Site Settings → Environment Variables
    - Add the following variables:
 
    ```
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your.email@gmail.com
-   SMTP_PASSWORD=your-app-password
-   FROM_EMAIL=your.email@gmail.com
+   SENDGRID_API_KEY=SG.your_sendgrid_api_key_here
+   FROM_EMAIL=your-verified-email@example.com
    ```
 
-3. **Deploy!** Vercel will automatically build and deploy your app.
+3. **Deploy!** Netlify will automatically build and deploy your app from GitHub.
 
 ### Local Development
 
 1. **Clone the repository**:
    ```bash
-   git clone <your-repo-url>
-   cd trafikverket-monitor-web
+   git clone https://github.com/osvennersjo/trafikverket-monitor.git
+   cd trafikverket-monitor
    ```
 
 2. **Install dependencies**:
@@ -54,8 +51,9 @@ A beautiful web application to monitor Swedish driving test availability with Se
 
 3. **Set up environment variables**:
    ```bash
-   cp env.example .env.local
-   # Edit .env.local with your email settings
+   # Create .env.local with your SendGrid settings
+   echo "SENDGRID_API_KEY=SG.your_api_key_here" > .env.local
+   echo "FROM_EMAIL=your-email@example.com" >> .env.local
    ```
 
 4. **Run the development server**:
@@ -67,23 +65,24 @@ A beautiful web application to monitor Swedish driving test availability with Se
 
 ## 📧 Email Configuration
 
-### Gmail Setup (Recommended)
+### SendGrid Setup (Recommended)
 
-1. **Enable 2-Factor Authentication** on your Google account
-2. **Generate an App Password**:
-   - Go to Google Account Settings → Security
-   - Select "App passwords" under 2-Step Verification
-   - Generate password for "Mail"
-   - Use this password in `SMTP_PASSWORD`
+1. **Create SendGrid Account**: Sign up at [sendgrid.com](https://sendgrid.com)
+2. **Generate API Key**:
+   - Go to Settings → API Keys
+   - Create API Key with "Mail Send" permissions
+   - Copy the API key (starts with `SG.`)
+3. **Verify Sender Email**:
+   - Go to Settings → Sender Authentication
+   - Verify your FROM_EMAIL address
+   - Complete the verification process
 
-### Other Email Providers
+### Environment Variables
 
-| Provider | SMTP Host | Port | Secure |
-|----------|-----------|------|--------|
-| Gmail | smtp.gmail.com | 587 | TLS |
-| Outlook | smtp-mail.outlook.com | 587 | TLS |
-| Yahoo | smtp.mail.yahoo.com | 587 | TLS |
-| SendGrid | smtp.sendgrid.net | 587 | TLS |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SENDGRID_API_KEY` | SendGrid API key | SG.abc123... |
+| `FROM_EMAIL` | Verified sender email | your-email@example.com |
 
 ## 🎯 How It Works
 
@@ -107,11 +106,8 @@ The app provides these API endpoints:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `SMTP_HOST` | Email server hostname | smtp.gmail.com |
-| `SMTP_PORT` | Email server port | 587 |
-| `SMTP_USER` | Email username | your.email@gmail.com |
-| `SMTP_PASSWORD` | Email password/app password | your-app-password |
-| `FROM_EMAIL` | Sender email address | your.email@gmail.com |
+| `SENDGRID_API_KEY` | SendGrid API key for sending emails | SG.abc123def456... |
+| `FROM_EMAIL` | Verified sender email address | your-email@example.com |
 
 ### Monitoring Settings
 
@@ -144,15 +140,18 @@ Edit the Sean Paul section in `pages/index.tsx` to add more quotes!
 
 ## 🚀 Deployment Options
 
-### Vercel (Recommended)
+### Netlify (Recommended)
+- ✅ Easy GitHub integration
+- ✅ Automatic deployments
+- ✅ Environment variables
+- ✅ Next.js support with plugin
+- ✅ Built-in location filtering protection
+
+### Vercel
 - ✅ Easy deployment
 - ✅ Automatic HTTPS
 - ✅ Environment variables
 - ✅ Serverless functions
-
-### Netlify
-- ✅ Easy deployment
-- ⚠️ May need function timeout adjustments
 
 ### Railway
 - ✅ Great for Node.js apps
@@ -167,9 +166,9 @@ Edit the Sean Paul section in `pages/index.tsx` to add more quotes!
 ### Common Issues
 
 1. **Email not sending**:
-   - Check your email credentials
-   - Ensure app password is used (not regular password)
-   - Verify SMTP settings for your provider
+   - Verify SendGrid API key is correct
+   - Ensure FROM_EMAIL is verified in SendGrid
+   - Check SendGrid dashboard for delivery logs
 
 2. **No API endpoints found**:
    - Trafikverket may have updated their API
@@ -177,8 +176,8 @@ Edit the Sean Paul section in `pages/index.tsx` to add more quotes!
    - Update endpoint list in monitoring code
 
 3. **Monitoring stops**:
-   - Check Vercel function logs
-   - Verify function timeout settings
+   - Check Netlify function logs
+   - Verify function timeout settings (default: 10s, may need 26s)
    - Restart monitoring from the UI
 
 ### Debug Mode
