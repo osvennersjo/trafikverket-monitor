@@ -655,6 +655,51 @@ export default function Home() {
                       '🧪 Test Payload Variations'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-auth-methods', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🔐 Auth Methods Test Results:', data);
+                        
+                        if (data.success) {
+                          const message = data.conclusion || `🔐 Tested ${data.summary.total} auth methods: ${data.summary.successful} successful, ${data.summary.jsonResponses} JSON responses`;
+                          showMessage(message, data.summary.jsonResponses > 0 ? 'success' : 'info');
+                          
+                          console.log('📊 Auth Summary:', data.summary);
+                          console.log('📋 Auth Results:', data.results);
+                          console.log('💡 Recommendations:', data.recommendations);
+                        } else {
+                          showMessage(`❌ Auth methods test failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to test auth methods', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-teal-600 hover:bg-teal-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing Auth...
+                      </>
+                    ) : (
+                      '🔐 Test Authentication Methods'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
