@@ -749,6 +749,68 @@ export default function Home() {
                       '🎯 Test REAL Session (with cURL data!)'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/parse-real-response', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🕐 Time Manipulation & Response Parsing Results:', data);
+                        
+                        if (data.success) {
+                          const message = data.conclusion || `🕐 Time Test: ${data.summary.successful}/${data.summary.total} successful${data.summary.timeManipulationWorks ? ' - TIME MANIPULATION WORKS!' : ''}`;
+                          showMessage(message, data.summary.timeManipulationWorks ? 'success' : 'info');
+                          
+                          console.log('📊 Time Test Summary:', data.summary);
+                          console.log('📋 Time Test Results:', data.results);
+                          console.log('💡 Recommendations:', data.recommendations);
+                          console.log('🗺️ Location Analysis:', data.locationAnalysis);
+                          
+                          if (data.summary.timeManipulationWorks) {
+                            console.log('🎉 BREAKTHROUGH! We can extend session lifetime automatically!');
+                          }
+                          
+                          // Log occasion data
+                          data.results.forEach((result: any) => {
+                            if (result.success && result.occasionInfo) {
+                              console.log(`📍 ${result.name}:`, {
+                                total: result.occasionInfo.totalOccasions,
+                                locations: result.occasionInfo.locations,
+                                södertälje: result.occasionInfo.sodertaljeeSlots,
+                                dates: result.occasionInfo.dates
+                              });
+                            }
+                          });
+                        } else {
+                          showMessage(`❌ Time manipulation test failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to test time manipulation', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-lime-600 hover:bg-lime-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing Time Magic...
+                      </>
+                    ) : (
+                      '🕐 Test Time Manipulation & Parse Data'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
