@@ -235,6 +235,54 @@ export default function Home() {
                   )}
                 </div>
 
+                {/* Debug Monitoring Button */}
+                <div>
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/debug-monitor');
+                        const data = await response.json();
+                        console.log('Debug result:', data);
+                        
+                        if (data.success) {
+                          showMessage('🔧 Debug completed! Check browser console for details.', 'info');
+                          
+                          // Show user-friendly summary
+                          const steps = data.debug.steps || [];
+                          const summary = steps.join(' → ');
+                          console.log('Debug Summary:', summary);
+                          
+                          if (data.debug.error) {
+                            showMessage(`❌ Debug found error: ${data.debug.error.message}`, 'error');
+                          }
+                        } else {
+                          showMessage('❌ Debug test failed', 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to run debug test', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-orange-600 hover:bg-orange-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Debugging...
+                      </>
+                    ) : (
+                      '🔧 Debug Monitoring System'
+                    )}
+                  </button>
+                </div>
+
                 {/* Date Range */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
