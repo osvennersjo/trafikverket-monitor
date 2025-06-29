@@ -343,14 +343,25 @@ export class TrafikverketMonitor {
         const location = occasion.location || occasion.locationName;
         const available = occasion.available !== false; // Default to true
 
-        if (date && time && available) {
-          slots.push({
-            date,
-            time,
-            location: location || 'Unknown',
-            testType: 'Manual B License',
-            available
-          });
+        if (date && time && available && location) {
+          // CRITICAL: Only allow Södertälje or Farsta locations
+          const locationLower = location.toLowerCase();
+          const isValidLocation = locationLower.includes('södertälje') || 
+                                 locationLower.includes('farsta') ||
+                                 locationLower.includes('sodertalje'); // Alternative spelling
+
+          if (isValidLocation) {
+            console.log(`✅ Valid location found: ${location}`);
+            slots.push({
+              date,
+              time,
+              location,
+              testType: 'Manual B License',
+              available
+            });
+          } else {
+            console.log(`❌ Ignoring slot at invalid location: ${location}`);
+          }
         }
       }
     });
@@ -360,11 +371,29 @@ export class TrafikverketMonitor {
 
   private async sendNotification(slots: TestSlot[]): Promise<void> {
     try {
-      const subject = `🚗 New Driving Test Slots Available!`;
+      // CRITICAL SAFETY CHECK: Filter locations one more time before sending email
+      const validSlots = slots.filter(slot => {
+        const locationLower = slot.location.toLowerCase();
+        const isValid = locationLower.includes('södertälje') || 
+                       locationLower.includes('farsta') ||
+                       locationLower.includes('sodertalje'); // Alternative spelling
+        
+        if (!isValid) {
+          console.log(`🚨 SAFETY CHECK: Prevented email for invalid location: ${slot.location}`);
+        }
+        return isValid;
+      });
+
+      if (validSlots.length === 0) {
+        console.log('🛡️ No valid slots after safety check - no email sent');
+        return;
+      }
+
+      const subject = `🚗 New Driving Test Slots Available in Södertälje/Farsta!`;
       
-      let emailBody = `Great news! We found ${slots.length} new driving test slots available:\n\n`;
+      let emailBody = `Great news! We found ${validSlots.length} new driving test slots available in your target locations:\n\n`;
       
-      slots.forEach(slot => {
+      validSlots.forEach(slot => {
         emailBody += `📅 Date: ${slot.date}\n`;
         emailBody += `🕐 Time: ${slot.time}\n`;
         emailBody += `📍 Location: ${slot.location}\n`;
@@ -383,7 +412,7 @@ export class TrafikverketMonitor {
         emailBody
       );
 
-      console.log(`📧 Email notification sent to ${this.config.email}`);
+      console.log(`📧 Email notification sent to ${this.config.email} for ${validSlots.length} valid slots`);
     } catch (error) {
       console.error('Failed to send email notification:', error);
     }
