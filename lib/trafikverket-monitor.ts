@@ -177,13 +177,16 @@ export class TrafikverketMonitor {
           console.log(`❌ Failed ${endpoint.method} ${endpoint.path}: ${status} - ${message}`);
         }
         
-        // For occasion-bundles, authentication error is expected but means endpoint exists
-        if (endpoint.path === '/Boka/occasion-bundles' && (status === 401 || status === 403)) {
-          console.log(`ℹ️  Occasion-bundles endpoint exists but requires authentication (expected)`);
+        // For occasion-bundles, authentication error (401/403) OR bad request (400) means endpoint exists
+        if (endpoint.path === '/Boka/occasion-bundles' && (status === 400 || status === 401 || status === 403)) {
+          const authType = status === 400 ? 'requires valid payload/session' : 'requires authentication';
+          console.log(`ℹ️  Occasion-bundles endpoint exists but ${authType} (${status} response)`);
           this.workingEndpoints[endpoint.path] = {
             url: endpoint.path,
             method: 'POST',
             requiresAuth: true,
+            authType: authType,
+            responseStatus: status,
             data: null,
             priority: endpoint.priority
           };

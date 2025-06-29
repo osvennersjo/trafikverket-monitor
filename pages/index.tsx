@@ -611,6 +611,50 @@ export default function Home() {
                       '🎯 Test Direct Occasion-Bundles'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-payload-variations', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🧪 Payload Variations Test Results:', data);
+                        
+                        if (data.success) {
+                          const message = data.conclusion || `🧪 Tested ${data.summary.total} variations: ${data.summary.successful} successful, ${data.summary.badRequest} bad request, ${data.summary.unauthorized} unauthorized`;
+                          showMessage(message, data.summary.successful > 0 ? 'success' : 'info');
+                          
+                          console.log('📊 Summary:', data.summary);
+                          console.log('📋 Detailed Results:', data.results);
+                        } else {
+                          showMessage(`❌ Payload variations test failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to test payload variations', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing Variations...
+                      </>
+                    ) : (
+                      '🧪 Test Payload Variations'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
