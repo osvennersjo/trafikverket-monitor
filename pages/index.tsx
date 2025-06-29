@@ -176,7 +176,8 @@ export default function Home() {
                   <p className="text-sm text-blue-800">
                     📍 <strong>Monitoring:</strong> Södertälje & Farsta<br />
                     🚗 <strong>Test Type:</strong> Manual B License<br />
-                    🔄 <strong>Check Interval:</strong> Every 5 minutes
+                    🔄 <strong>Check Interval:</strong> Every 5 minutes<br />
+                    📧 <strong>Note:</strong> Notifications logged to console for now
                   </p>
                 </div>
 

@@ -41,13 +41,13 @@ export default async function handler(
       monitoringInstance.stop();
     }
 
-    // Create email notifier
+    // Create email notifier (works without credentials for now)
     const emailNotifier = new EmailNotifier({
-      smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
+      smtpHost: process.env.SMTP_HOST || 'localhost',
       smtpPort: parseInt(process.env.SMTP_PORT || '587'),
       smtpUser: process.env.SMTP_USER || '',
       smtpPassword: process.env.SMTP_PASSWORD || '',
-      fromEmail: process.env.FROM_EMAIL || process.env.SMTP_USER || '',
+      fromEmail: process.env.FROM_EMAIL || 'monitor@trafikverket.local',
     });
 
     // Create and start monitoring

@@ -32,10 +32,14 @@ export class EmailNotifier {
   async sendEmail(to: string, subject: string, text: string): Promise<void> {
     try {
       if (!this.config.smtpUser || !this.config.smtpPassword) {
-        console.warn('⚠️ Email credentials not configured - email notifications disabled');
-        console.log(`📧 Would have sent email to ${to}:`);
-        console.log(`Subject: ${subject}`);
-        console.log(`Body: ${text}`);
+        console.log('🎉 DRIVING TEST SLOT FOUND! 🎉');
+        console.log(`📧 Email would be sent to: ${to}`);
+        console.log(`📋 Subject: ${subject}`);
+        console.log(`📝 Message: ${text}`);
+        console.log('🎵 Sean Paul says: "Just gimme the light... and your körkort!"');
+        
+        // For now, we'll just log the notification
+        // TODO: Set up email service later
         return;
       }
 
