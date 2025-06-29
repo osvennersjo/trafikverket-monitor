@@ -914,6 +914,59 @@ export default function Home() {
                       '🚀 Test V2 Monitor (Working Session Format!)'
                     )}
                   </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/session-refresh-helper', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('🔄 Session Refresh Helper Results:', data);
+                        
+                        if (data.success) {
+                          const sessionMsg = data.currentSessionStatus.status === 'active' 
+                            ? '✅ Current session still works!'
+                            : '❌ Session expired - need refresh';
+                          showMessage(sessionMsg, data.currentSessionStatus.status === 'active' ? 'success' : 'info');
+                          
+                          console.log('📊 Session Status:', data.currentSessionStatus);
+                          console.log('🔄 Refresh Instructions:', data.refreshInstructions);
+                          console.log('🕐 Time Manipulation:', data.timeManipulationStatus);
+                          console.log('💡 Next Steps:', data.nextSteps);
+                          
+                          if (data.currentSessionStatus.status === 'expired') {
+                            console.log('📋 HOW TO GET FRESH COOKIES:');
+                            data.refreshInstructions.steps.forEach((step: any) => console.log(step));
+                          }
+                        } else {
+                          showMessage(`❌ Session check failed: ${data.error}`, 'error');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to check session status', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Checking Session...
+                      </>
+                    ) : (
+                      '🔄 Check Session & Get Refresh Instructions'
+                    )}
+                  </button>
                 </div>
 
                 {/* Manual Discovery Instructions */}
