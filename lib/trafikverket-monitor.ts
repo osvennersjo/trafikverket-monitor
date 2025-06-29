@@ -108,23 +108,22 @@ export class TrafikverketMonitor {
   private async discoverApiEndpoints(): Promise<boolean> {
     console.log('🔍 Discovering API endpoints...');
 
-    // Known working endpoints from successful GitHub projects
+    // Correct endpoints discovered through manual inspection
     const endpointsToTest = [
-      // Modern API endpoints
+      // Main occasion search endpoint (the key one)
+      { path: '/Boka/occasion-bundles', method: 'POST' },
+      
+      // Supporting endpoints discovered via XHR analysis
+      { path: '/boka/ng/api/search-information', method: 'GET' },
+      { path: '/boka/ng/api/get-navigation-model', method: 'GET' },
+      { path: '/boka/ng/api/information', method: 'GET' },
+      { path: '/boka/ng/api/is-system-updating', method: 'GET' },
+      { path: '/boka/ng/api/is-authorized', method: 'GET' },
+      
+      // Fallback to old endpoints (probably won't work)
       { path: '/boka/api/2.0/examinationTypes', method: 'GET' },
       { path: '/boka/api/2.0/locations', method: 'GET' },
       { path: '/boka/api/2.0/occasions', method: 'POST' },
-      { path: '/boka/api/2.0/occasions/search', method: 'POST' },
-      
-      // Legacy endpoints
-      { path: '/boka/api/examinationTypes', method: 'GET' },
-      { path: '/boka/api/locations', method: 'GET' },
-      { path: '/boka/api/occasions', method: 'POST' },
-      
-      // Alternative patterns
-      { path: '/api/2.0/examinationTypes', method: 'GET' },
-      { path: '/api/2.0/locations', method: 'GET' },
-      { path: '/api/2.0/occasions', method: 'POST' },
     ];
 
     let foundEndpoints = 0;
@@ -136,49 +135,73 @@ export class TrafikverketMonitor {
         if (endpoint.method === 'GET') {
           response = await this.httpClient.get(endpoint.path);
         } else {
-          // For POST endpoints, try with empty payload first
-          response = await this.httpClient.post(endpoint.path, {});
+          // For the main occasion-bundles endpoint, use proper payload structure
+          if (endpoint.path === '/Boka/occasion-bundles') {
+            const payload = {
+              bookingSession: {
+                socialSecurityNumber: '', // We'll try without SSN first
+                licenceId: 5, // B license
+                bookingModeId: 0
+              },
+              occasionBundleQuery: {
+                startDate: this.config.fromDate,
+                endDate: this.config.toDate,
+                locationId: null, // Search all locations initially
+                examinationTypeId: 5, // B license
+                tachographTypeId: 1,
+                occasionChoiceId: 1,
+                searchedMonths: 0
+              }
+            };
+            response = await this.httpClient.post(endpoint.path, payload);
+          } else {
+            // For other POST endpoints, try with empty payload
+            response = await this.httpClient.post(endpoint.path, {});
+          }
         }
         
-        if (response.status === 200 || response.status === 201) {
-          console.log(`✅ Found working ${endpoint.method} endpoint: ${endpoint.path}`);
+        // Check if response contains actual data (not HTML redirect)
+        const responseText = JSON.stringify(response.data);
+        const isHtmlResponse = responseText.includes('<!doctype html>') || responseText.includes('<html');
+        
+        if ((response.status === 200 || response.status === 201) && !isHtmlResponse) {
+          console.log(`✅ Found working ${endpoint.method} endpoint: ${endpoint.path} (${response.data ? Object.keys(response.data).length : 0} keys)`);
           this.workingEndpoints[endpoint.path] = {
             url: endpoint.path,
             method: endpoint.method,
             data: response.data
           };
           foundEndpoints++;
+        } else if (isHtmlResponse) {
+          console.log(`❌ ${endpoint.method} ${endpoint.path}: Returns HTML (redirect)`);
         }
       } catch (error: any) {
-        console.log(`❌ Failed ${endpoint.method} ${endpoint.path}: ${error.response?.status || error.message}`);
+        const status = error.response?.status;
+        const message = error.response?.data?.message || error.message;
+        console.log(`❌ Failed ${endpoint.method} ${endpoint.path}: ${status} - ${message}`);
         
-        // If GET failed with 405, try POST
-        if (endpoint.method === 'GET' && error.response?.status === 405) {
-          try {
-            const postResponse = await this.httpClient.post(endpoint.path, {});
-            if (postResponse.status === 200 || postResponse.status === 201) {
-              console.log(`✅ Found working POST endpoint (was GET): ${endpoint.path}`);
-              this.workingEndpoints[endpoint.path] = {
-                url: endpoint.path,
-                method: 'POST',
-                data: postResponse.data
-              };
-              foundEndpoints++;
-            }
-          } catch (postError) {
-            // Still failed
-          }
+        // For occasion-bundles, authentication error is expected but means endpoint exists
+        if (endpoint.path === '/Boka/occasion-bundles' && (status === 401 || status === 403)) {
+          console.log(`ℹ️  Occasion-bundles endpoint exists but requires authentication (expected)`);
+          this.workingEndpoints[endpoint.path] = {
+            url: endpoint.path,
+            method: 'POST',
+            requiresAuth: true,
+            data: null
+          };
+          foundEndpoints++;
         }
       }
 
       // Add delay between requests to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
 
     console.log(`📊 Found ${foundEndpoints} working endpoints`);
     
     if (foundEndpoints === 0) {
       console.log('❌ No working endpoints found - monitoring cannot start');
+      console.log('💡 This usually means the API structure has changed or authentication is required');
     }
     
     return foundEndpoints > 0;
@@ -303,23 +326,41 @@ export class TrafikverketMonitor {
     const occasionEndpoints = Object.keys(this.workingEndpoints)
       .filter(ep => ep.includes('occasion'));
 
-    const locationIds = Object.values(this.locationIds).map((loc: any) => loc.id).filter(Boolean);
-
     for (const endpoint of occasionEndpoints) {
       try {
         const endpointData = this.workingEndpoints[endpoint];
         
         let response;
         if (endpointData.method === 'POST') {
-          const searchParams = {
-            licenceCategoryId: "5", // B license
-            examTypeId: "5",        // Manual driving test
-            locationIds: locationIds.length > 0 ? locationIds : [],
-            fromDate: this.config.fromDate,
-            toDate: this.config.toDate
-          };
-          
-          response = await this.httpClient.post(endpoint, searchParams);
+          if (endpoint === '/Boka/occasion-bundles') {
+            // Use the correct payload structure for the main endpoint
+            const payload = {
+              bookingSession: {
+                socialSecurityNumber: '', // Empty for now - might need auth later
+                licenceId: 5, // B license
+                bookingModeId: 0
+              },
+              occasionBundleQuery: {
+                startDate: this.config.fromDate,
+                endDate: this.config.toDate,
+                locationId: null, // Search all locations - we'll filter in parsing
+                examinationTypeId: 5, // B license
+                tachographTypeId: 1,
+                occasionChoiceId: 1,
+                searchedMonths: 0
+              }
+            };
+            response = await this.httpClient.post(endpoint, payload);
+          } else {
+            // Fallback for old-style endpoints
+            const searchParams = {
+              licenceCategoryId: "5", // B license
+              examTypeId: "5",        // Manual driving test
+              fromDate: this.config.fromDate,
+              toDate: this.config.toDate
+            };
+            response = await this.httpClient.post(endpoint, searchParams);
+          }
         } else {
           const params = {
             licenceCategory: "5",
@@ -327,7 +368,6 @@ export class TrafikverketMonitor {
             fromDate: this.config.fromDate,
             toDate: this.config.toDate
           };
-          
           response = await this.httpClient.get(endpoint, { params });
         }
 
@@ -338,32 +378,82 @@ export class TrafikverketMonitor {
             return slots;
           }
         }
-      } catch (error) {
-        console.error(`Error searching ${endpoint}:`, error);
+      } catch (error: any) {
+        const status = error.response?.status;
+        const message = error.response?.data?.message || error.message;
+        console.error(`Error searching ${endpoint}: ${status} - ${message}`);
+        
+        // For the main endpoint, authentication errors are expected without proper session
+        if (endpoint === '/Boka/occasion-bundles' && (status === 401 || status === 403)) {
+          console.log('ℹ️ Authentication required for occasion-bundles - this is expected');
+          console.log('💡 The system may need Bank ID authentication to access actual booking data');
+        }
       }
     }
 
+    console.log('⚠️ No slots found from any endpoint');
     return [];
   }
 
   private parseOccasionsResponse(data: any): TestSlot[] {
     const slots: TestSlot[] = [];
 
+    console.log('📊 Parsing response data...');
+    console.log(`Response type: ${typeof data}, keys: ${data && typeof data === 'object' ? Object.keys(data).join(', ') : 'none'}`);
+
     let occasions = data;
+    
+    // Handle different response structures from different endpoints
     if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
-      occasions = data.occasions || data.results || data.data || [];
+      // Try different possible structures
+      occasions = data.occasions || 
+                 data.occasionBundles || 
+                 data.results || 
+                 data.data || 
+                 data.items ||
+                 data.appointments ||
+                 data.slots || 
+                 [];
+
+      // If still not an array, check nested structures
+      if (!Array.isArray(occasions) && typeof occasions === 'object') {
+        const possibleArrays = Object.values(occasions).filter(val => Array.isArray(val));
+        if (possibleArrays.length > 0) {
+          occasions = possibleArrays[0]; // Take the first array found
+        }
+      }
     }
 
     if (!Array.isArray(occasions)) {
       occasions = occasions ? [occasions] : [];
     }
 
+    console.log(`📊 Found ${occasions.length} occasions to process`);
+
     occasions.forEach((occasion: any) => {
       if (typeof occasion === 'object' && occasion !== null) {
-        const date = occasion.date || occasion.testDate;
-        const time = occasion.time || occasion.testTime;
-        const location = occasion.location || occasion.locationName;
-        const available = occasion.available !== false; // Default to true
+        // Try different field names for different API versions
+        const date = occasion.date || 
+                    occasion.testDate || 
+                    occasion.startDate ||
+                    occasion.occasionDate ||
+                    occasion.dateTime?.split('T')[0];
+                    
+        const time = occasion.time || 
+                    occasion.testTime || 
+                    occasion.startTime ||
+                    occasion.dateTime?.split('T')[1]?.substring(0, 5);
+                    
+        const location = occasion.location || 
+                        occasion.locationName || 
+                        occasion.locationDescription ||
+                        occasion.testCenter ||
+                        occasion.centerName;
+                        
+        const available = occasion.available !== false && 
+                         occasion.isAvailable !== false &&
+                         occasion.status !== 'booked' &&
+                         occasion.status !== 'unavailable';
 
         if (date && time && available && location) {
           // CRITICAL: Only allow Södertälje or Farsta locations
@@ -373,7 +463,7 @@ export class TrafikverketMonitor {
                                  locationLower.includes('sodertalje'); // Alternative spelling
 
           if (isValidLocation) {
-            console.log(`✅ Valid location found: ${location}`);
+            console.log(`✅ Valid location found: ${location} on ${date} at ${time}`);
             slots.push({
               date,
               time,
@@ -384,10 +474,13 @@ export class TrafikverketMonitor {
           } else {
             console.log(`❌ Ignoring slot at invalid location: ${location}`);
           }
+        } else {
+          console.log(`⚠️ Incomplete slot data: date=${date}, time=${time}, location=${location}, available=${available}`);
         }
       }
     });
 
+    console.log(`🎯 Final result: ${slots.length} valid slots found`);
     return slots;
   }
 
