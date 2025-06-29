@@ -246,15 +246,35 @@ export default function Home() {
                         console.log('Debug result:', data);
                         
                         if (data.success) {
-                          showMessage('🔧 Debug completed! Check browser console for details.', 'info');
+                          console.log('🔧 Full Debug Result:', data.debug);
                           
                           // Show user-friendly summary
                           const steps = data.debug.steps || [];
-                          const summary = steps.join(' → ');
-                          console.log('Debug Summary:', summary);
+                          console.log('Debug Steps:', steps);
                           
+                          // Check connectivity
+                          if (data.debug.connectivity?.mainSite?.accessible === false) {
+                            showMessage(`❌ Cannot connect to Trafikverket: ${data.debug.connectivity.mainSite.error}`, 'error');
+                          } else if (data.debug.endpointCount === 0) {
+                            showMessage('❌ Connected to Trafikverket but no working API endpoints found. The API structure may have changed.', 'error');
+                          } else if (data.debug.endpointCount > 0) {
+                            showMessage(`✅ Debug completed! Found ${data.debug.endpointCount} working endpoints. Check console for details.`, 'success');
+                          } else {
+                            showMessage('🔧 Debug completed! Check browser console for details.', 'info');
+                          }
+                          
+                          // Log detailed errors
+                          if (data.debug.discoveryError) {
+                            console.error('Discovery Error:', data.debug.discoveryError);
+                          }
+                          if (data.debug.locationError) {
+                            console.error('Location Error:', data.debug.locationError);
+                          }
+                          if (data.debug.searchError) {
+                            console.error('Search Error:', data.debug.searchError);
+                          }
                           if (data.debug.error) {
-                            showMessage(`❌ Debug found error: ${data.debug.error.message}`, 'error');
+                            console.error('General Error:', data.debug.error);
                           }
                         } else {
                           showMessage('❌ Debug test failed', 'error');
@@ -266,7 +286,7 @@ export default function Home() {
                       }
                     }}
                     disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-2 ${
                       isLoading 
                         ? 'bg-gray-400 cursor-not-allowed text-white' 
                         : 'bg-orange-600 hover:bg-orange-700 text-white cursor-pointer'
@@ -279,6 +299,43 @@ export default function Home() {
                       </>
                     ) : (
                       '🔧 Debug Monitoring System'
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch('/api/test-trafikverket');
+                        const data = await response.json();
+                        console.log('🧪 Trafikverket API Test Results:', data);
+                        
+                        if (data.summary) {
+                          showMessage(`🧪 API Test: ${data.summary.successful}/${data.summary.total} endpoints working. Check console for details.`, 
+                            data.summary.successful > 0 ? 'success' : 'error');
+                        } else {
+                          showMessage('🧪 API test completed - check console for details', 'info');
+                        }
+                      } catch (error) {
+                        showMessage('❌ Failed to run API test', 'error');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
+                      isLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Testing...
+                      </>
+                    ) : (
+                      '🧪 Test Trafikverket APIs'
                     )}
                   </button>
                 </div>
