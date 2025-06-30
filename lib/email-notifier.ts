@@ -97,7 +97,7 @@ Powered by Trafikverket Monitor
       const msg = {
         to: email,
         from: {
-          email: 'monitor@trafikverket-alerts.com',
+          email: 'osvennersjo@gmail.com',
           name: 'Trafikverket Monitor'
         },
         subject: subject,
@@ -204,7 +204,7 @@ Test email sent via SendGrid ⚡ Ready to monitor!
       const msg = {
         to: email,
         from: {
-          email: 'monitor@trafikverket-alerts.com',
+          email: 'osvennersjo@gmail.com',
           name: 'Trafikverket Monitor'
         },
         subject: subject,
