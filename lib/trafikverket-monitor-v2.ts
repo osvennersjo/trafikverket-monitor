@@ -59,7 +59,7 @@ export class TrafikverketMonitorV2 {
       fromEmail: 'noreply@trafikverket-monitor.com'
     });
     
-    // Create HTTP client first
+    // Create HTTP client first - use same headers as working session helper
     this.httpClient = axios.create({
       baseURL: 'https://fp.trafikverket.se',
       timeout: 10000,
@@ -70,14 +70,8 @@ export class TrafikverketMonitorV2 {
         'Content-Type': 'application/json; charset=UTF-8',
         'Origin': 'https://fp.trafikverket.se',
         'Referer': 'https://fp.trafikverket.se/Boka/ng/search/dSdDbIsIiEdAin/5/12/0/0',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
         'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36',
-        'X-Requested-With': 'XMLHttpRequest',
-        'sec-ch-ua': '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
-        'sec-ch-ua-mobile': '?1',
-        'sec-ch-ua-platform': '"Android"'
+        'X-Requested-With': 'XMLHttpRequest'
       }
     });
     
@@ -123,17 +117,18 @@ export class TrafikverketMonitorV2 {
         "paymentUrl": "",
         "searchedMonths": 0
       },
-      "occasionBundleQuery": {
-        "startDate": new Date(fromDate).toISOString(),
-        "endDate": new Date(toDate).toISOString(),
-        "searchedMonths": 0,
-        "locationId": null, // Search all locations, filter afterwards
-        "languageId": 13, // Swedish
-        "vehicleTypeId": 2, // Car
-        "tachographTypeId": 1,
-        "occasionChoiceId": 1,
-        "examinationTypeId": 12
-      }
+             "occasionBundleQuery": {
+         "startDate": new Date(fromDate).toISOString(),
+         "endDate": new Date(toDate).toISOString(),
+         "searchedMonths": 0,
+         "locationId": 1000132, // Use Södertälje specifically like working session helper
+         "nearbyLocationIds": [1000019], // Include Farsta as nearby
+         "languageId": 13, // Swedish
+         "vehicleTypeId": 2, // Car
+         "tachographTypeId": 1,
+         "occasionChoiceId": 1,
+         "examinationTypeId": 12
+       }
     };
 
     try {
@@ -406,16 +401,16 @@ export class TrafikverketMonitorV2 {
           "paymentUrl": "",
           "searchedMonths": 0
         },
-        "occasionBundleQuery": {
-          "startDate": "2024-12-20T00:00:00.000Z",
-          "searchedMonths": 0,
-          "locationId": null,
-          "languageId": 13,
-          "vehicleTypeId": 2,
-          "tachographTypeId": 1,
-          "occasionChoiceId": 1,
-          "examinationTypeId": 12
-        }
+              "occasionBundleQuery": {
+        "startDate": "2024-12-20T00:00:00.000Z",
+        "searchedMonths": 0,
+        "locationId": 1000132, // Use specific location like working session helper
+        "languageId": 13,
+        "vehicleTypeId": 2,
+        "tachographTypeId": 1,
+        "occasionChoiceId": 1,
+        "examinationTypeId": 12
+      }
       };
 
       const response = await this.httpClient.post('/Boka/occasion-bundles', testPayload);
