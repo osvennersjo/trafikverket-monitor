@@ -41,11 +41,16 @@ export default async function handler(
       monitoringInstance.stop();
     }
 
+    // Ensure SendGrid API key is available
+    if (!process.env.SENDGRID_API_KEY) {
+      return res.status(500).json({
+        error: 'SendGrid API key not configured',
+        recommendation: 'Set SENDGRID_API_KEY environment variable in Netlify deployment settings'
+      });
+    }
+
     // Create email notifier with SendGrid
-    const emailNotifier = new EmailNotifier({
-      sendgridApiKey: process.env.SENDGRID_API_KEY || '',
-      fromEmail: process.env.FROM_EMAIL || 'monitor@trafikverket-monitor.app',
-    });
+    const emailNotifier = new EmailNotifier();
 
     // Create and start monitoring
     monitoringInstance = new TrafikverketMonitor({

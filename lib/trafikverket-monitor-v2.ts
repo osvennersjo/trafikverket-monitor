@@ -54,10 +54,7 @@ export class TrafikverketMonitorV2 {
 
   constructor(emailAddress: string, fromDate: string, toDate: string) {
     this.emailAddress = emailAddress;
-    this.emailNotifier = new EmailNotifier({
-      sendgridApiKey: process.env.SENDGRID_API_KEY || '',
-      fromEmail: 'noreply@trafikverket-monitor.com'
-    });
+    this.emailNotifier = new EmailNotifier();
     
     // Create HTTP client first - use same headers as working session helper
     this.httpClient = axios.create({
@@ -228,41 +225,19 @@ export class TrafikverketMonitorV2 {
 
     console.log(`📧 Notifying about ${newSlots.length} new slots...`);
 
-    // Group slots by location for better email formatting
-    const slotsByLocation: { [key: string]: MonitoringSlot[] } = {};
-    newSlots.forEach(slot => {
-      if (!slotsByLocation[slot.location]) {
-        slotsByLocation[slot.location] = [];
-      }
-      slotsByLocation[slot.location].push(slot);
-    });
+    // Convert MonitoringSlot[] to format expected by sendNotification
+    const slotsForEmail = newSlots.map(slot => ({
+      startTime: `${slot.date}T${slot.time}:00.000Z`,
+      location: slot.location,
+      duration: slot.duration,
+      examinationType: slot.examinationType
+    }));
 
-    // Create email content
-    let emailContent = `🎉 NEW DRIVING TEST SLOTS AVAILABLE!\n\n`;
-    
-    for (const [location, locationSlots] of Object.entries(slotsByLocation)) {
-      emailContent += `📍 ${location.toUpperCase()}\n`;
-      emailContent += `${'='.repeat(location.length + 4)}\n`;
-      
-      locationSlots
-        .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
-        .forEach(slot => {
-          emailContent += `🗓️ ${slot.date} at ${slot.time} (${slot.duration} min)\n`;
-        });
-      
-      emailContent += `\n`;
-    }
-
-    emailContent += `🚗 Test Type: Manual B License\n`;
-    emailContent += `⚡ Total Slots: ${newSlots.length}\n`;
-    emailContent += `🕐 Found at: ${new Date().toLocaleString('sv-SE')}\n\n`;
-    emailContent += `⏰ Book quickly at: https://fp.trafikverket.se\n\n`;
-    emailContent += `"me want buy moto, me want build house" - Sean Paul 🎵`;
-
-    const subject = `🚨 ${newSlots.length} New Driving Test Slot${newSlots.length > 1 ? 's' : ''} in ${Object.keys(slotsByLocation).join(' & ')}!`;
+    // Get unique locations
+    const locations = [...new Set(newSlots.map(slot => slot.location))];
 
     try {
-      await this.emailNotifier.sendEmail(this.emailAddress, subject, emailContent);
+      await this.emailNotifier.sendNotification(this.emailAddress, slotsForEmail, locations);
       console.log('✅ Email notification sent successfully');
     } catch (error) {
       console.error('❌ Failed to send email notification:', error);

@@ -7,8 +7,13 @@ interface MonitoringStatus {
   email: string;
   fromDate: string;
   toDate: string;
-  slotsFound: number;
-  lastCheck: string;
+  sessionWorking?: boolean;
+  occasionsFound?: number;
+  checkInterval?: string;
+  emailProvider?: string;
+  locations?: string[];
+  lastCheck?: string;
+  slotsFound?: number;
 }
 
 export default function Home() {
@@ -26,7 +31,7 @@ export default function Home() {
     setTimeout(() => setMessage(''), 5000);
   };
 
-  const startMonitoring = async () => {
+  const startLiveMonitoring = async () => {
     if (!email || !fromDate || !toDate) {
       showMessage('Please fill in all fields!', 'error');
       return;
@@ -40,12 +45,13 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/start-monitoring', {
+      const response = await fetch('/api/start-live-monitoring', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: 'start',
           email,
           fromDate,
           toDate,
@@ -54,11 +60,15 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        showMessage('Monitoring started! You will receive emails when slots become available.', 'success');
-        checkStatus();
+      if (response.ok && data.success) {
+        showMessage('🚀 Live monitoring started! You will receive emails when slots become available.', 'success');
+        setStatus(data.status);
       } else {
-        showMessage(data.error || 'Failed to start monitoring', 'error');
+        if (data.error?.includes('Session test failed')) {
+          showMessage('⚠️ Session expired - please get fresh cookies from browser and try again', 'info');
+        } else {
+          showMessage(data.error || 'Failed to start live monitoring', 'error');
+        }
       }
     } catch (error) {
       showMessage('Network error. Please try again.', 'error');
@@ -69,13 +79,23 @@ export default function Home() {
 
   const stopMonitoring = async () => {
     try {
-      const response = await fetch('/api/stop-monitoring', {
+      const response = await fetch('/api/start-live-monitoring', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'stop'
+        }),
       });
 
-      if (response.ok) {
-        showMessage('Monitoring stopped.', 'info');
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showMessage('🛑 Live monitoring stopped.', 'info');
         setStatus(null);
+      } else {
+        showMessage(data.error || 'Failed to stop monitoring', 'error');
       }
     } catch (error) {
       showMessage('Failed to stop monitoring', 'error');
@@ -84,10 +104,23 @@ export default function Home() {
 
   const checkStatus = async () => {
     try {
-      const response = await fetch('/api/status');
+      const response = await fetch('/api/start-live-monitoring', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'status'
+        }),
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setStatus(data);
+        if (data.success && data.status.isActive) {
+          setStatus(data.status);
+        } else {
+          setStatus(null);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch status');
@@ -95,10 +128,8 @@ export default function Home() {
   };
 
   const testEmail = async () => {
-    console.log('testEmail called, email state:', email);
     if (!email || email.trim().length === 0) {
       showMessage('Please enter an email address first', 'error');
-      console.log('Email validation failed:', { email, trimmed: email.trim(), length: email.trim().length });
       return;
     }
 
@@ -157,7 +188,7 @@ export default function Home() {
             {/* Left Column - Form */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-                🎯 Start Monitoring
+                🎯 Live Monitoring System
               </h2>
 
               <div className="space-y-4">
@@ -169,22 +200,10 @@ export default function Home() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => {
-                      console.log('Email input changed:', e.target.value);
-                      setEmail(e.target.value);
-                    }}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="your.email@example.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  {/* Real-time email value display */}
-                  <div className="text-xs text-blue-600 mt-1">
-                    Current email value: "{email}" (length: {email.length})
-                  </div>
-                  {email && (
-                    <p className="text-sm text-green-600 mt-1">
-                      ✅ Email entered - test button enabled
-                    </p>
-                  )}
                 </div>
 
                 {/* Test Email Button */}
@@ -192,7 +211,7 @@ export default function Home() {
                   <button
                     onClick={testEmail}
                     disabled={isLoading || !email}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-2 ${
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
                       isLoading || !email 
                         ? 'bg-gray-400 cursor-not-allowed text-white' 
                         : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
@@ -207,783 +226,6 @@ export default function Home() {
                       '🧪 Test Email Configuration'
                     )}
                   </button>
-                  
-                  {/* Debug information */}
-                  <div className="text-xs text-gray-500 mb-2 text-center border p-2 bg-gray-50">
-                    <strong>Debug Info:</strong><br/>
-                    Email value: "{email}" (Length: {email.length})<br/>
-                    Email truthy: {email ? 'TRUE' : 'FALSE'}<br/>
-                    !email: {!email ? 'TRUE' : 'FALSE'}<br/>
-                    isLoading: {isLoading ? 'TRUE' : 'FALSE'}<br/>
-                    Button disabled: {isLoading || !email ? 'TRUE' : 'FALSE'}
-                  </div>
-                  
-                  {!email && (
-                    <p className="text-sm text-gray-500 mb-4 text-center">
-                      ↑ Enter an email address above to enable testing
-                    </p>
-                  )}
-                  {email && !isLoading && (
-                    <p className="text-sm text-green-600 mb-4 text-center">
-                      ✅ Button should be clickable now!
-                    </p>
-                  )}
-                  {isLoading && (
-                    <p className="text-sm text-orange-600 mb-4 text-center">
-                      ⏳ Please wait - operation in progress...
-                    </p>
-                  )}
-                </div>
-
-                {/* Debug Monitoring Button */}
-                <div>
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/debug-monitor');
-                        const data = await response.json();
-                        console.log('Debug result:', data);
-                        
-                        if (data.success) {
-                          console.log('🔧 Full Debug Result:', data.debug);
-                          
-                          // Show user-friendly summary
-                          const steps = data.debug.steps || [];
-                          console.log('Debug Steps:', steps);
-                          
-                          // Check connectivity
-                          if (data.debug.connectivity?.mainSite?.accessible === false) {
-                            showMessage(`❌ Cannot connect to Trafikverket: ${data.debug.connectivity.mainSite.error}`, 'error');
-                          } else if (data.debug.endpointCount === 0) {
-                            showMessage('❌ Connected to Trafikverket but no working API endpoints found. The API structure may have changed.', 'error');
-                          } else if (data.debug.endpointCount > 0) {
-                            showMessage(`✅ Debug completed! Found ${data.debug.endpointCount} working endpoints. Check console for details.`, 'success');
-                          } else {
-                            showMessage('🔧 Debug completed! Check browser console for details.', 'info');
-                          }
-                          
-                          // Log detailed errors
-                          if (data.debug.discoveryError) {
-                            console.error('Discovery Error:', data.debug.discoveryError);
-                          }
-                          if (data.debug.locationError) {
-                            console.error('Location Error:', data.debug.locationError);
-                          }
-                          if (data.debug.searchError) {
-                            console.error('Search Error:', data.debug.searchError);
-                          }
-                          if (data.debug.error) {
-                            console.error('General Error:', data.debug.error);
-                          }
-                        } else {
-                          showMessage('❌ Debug test failed', 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to run debug test', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-2 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-orange-600 hover:bg-orange-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Debugging...
-                      </>
-                    ) : (
-                      '🔧 Debug Monitoring System'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-trafikverket');
-                        const data = await response.json();
-                        console.log('🧪 Trafikverket API Test Results:', data);
-                        
-                        if (data.summary) {
-                          showMessage(`🧪 API Test: ${data.summary.successful}/${data.summary.total} endpoints working. Check console for details.`, 
-                            data.summary.successful > 0 ? 'success' : 'error');
-                        } else {
-                          showMessage('🧪 API test completed - check console for details', 'info');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to run API test', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing...
-                      </>
-                    ) : (
-                      '🧪 Test Trafikverket APIs'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/discover-current-apis');
-                        const data = await response.json();
-                        console.log('🔍 API Discovery Results:', data);
-                        
-                        if (data.summary) {
-                          const message = `🔍 Discovery: ${data.summary.accessibleBaseUrls} base URLs accessible, ${data.summary.workingEndpoints} working endpoints found. Check console for details.`;
-                          showMessage(message, data.summary.workingEndpoints > 0 ? 'success' : 'info');
-                          
-                          if (data.recommendations) {
-                            console.log('📋 Recommendations:', data.recommendations);
-                          }
-                        } else {
-                          showMessage('🔍 API discovery completed - check console for details', 'info');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to run API discovery', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Discovering...
-                      </>
-                    ) : (
-                      '🔍 Discover Current APIs'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-xhr-requests', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🎯 Occasion-Bundles Test Results:', data);
-                        
-                        if (data.summary) {
-                          const message = `🎯 Occasion-Bundles: ${data.summary.successful}/${data.summary.total} strategies worked! Best: ${data.summary.bestStrategy}`;
-                          showMessage(message, data.summary.successful > 0 ? 'success' : 'error');
-                          
-                          if (data.promising.length > 0) {
-                            console.log('🏆 Promising Results:', data.promising);
-                          }
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test occasion-bundles', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-yellow-600 hover:bg-yellow-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Goldmine...
-                      </>
-                    ) : (
-                      '🏆 Test Occasion-Bundles (1,902 kB Goldmine!)'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-all-xhr-endpoints', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🎯 All XHR Endpoints Test Results:', data);
-                        
-                        if (data.summary) {
-                          const message = `🎯 XHR Test: ${data.summary.successful}/${data.summary.total} working, ${data.summary.promising} promising! Best: ${data.summary.bestEndpoint}`;
-                          showMessage(message, data.summary.promising > 0 ? 'success' : 'info');
-                          
-                          if (data.promising.length > 0) {
-                            console.log('🏆 Promising Endpoints:', data.promising);
-                            console.log('🔍 Check "search-information" and "get-active-reservations" results!');
-                          }
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test XHR endpoints', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing All XHRs...
-                      </>
-                    ) : (
-                      '🎯 Test ALL XHR Endpoints (10 total)'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-updated-monitor', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🚀 Updated Monitor Test Results:', data);
-                        
-                        if (data.success) {
-                          const message = data.message || `🚀 Updated Monitor: ${data.endpointCount} endpoints, ${data.slotsFound} slots found`;
-                          showMessage(message, data.discoveryResult ? 'success' : 'error');
-                          
-                          if (data.workingEndpoints && data.workingEndpoints.length > 0) {
-                            console.log('✅ Working Endpoints:', data.workingEndpoints);
-                          }
-                          
-                          if (data.slots && data.slots.length > 0) {
-                            console.log('🎯 Found Slots:', data.slots);
-                          }
-                        } else {
-                          showMessage(`❌ Updated monitor test failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test updated monitor', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Fixed Monitor...
-                      </>
-                    ) : (
-                      '🚀 Test UPDATED Monitoring System'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/quick-monitor-test', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('⚡ Quick Monitor Test Results:', data);
-                        
-                        if (data.success) {
-                          const message = data.message || `⚡ Quick test: ${data.endpointCount || 0} endpoints found in ${data.duration || 0}ms`;
-                          showMessage(message, data.discoveryResult ? 'success' : 'info');
-                          
-                          if (data.workingEndpoints && data.workingEndpoints.length > 0) {
-                            console.log('✅ Working Endpoints:', data.workingEndpoints);
-                          }
-                        } else {
-                          showMessage(`❌ Quick test failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to run quick test', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Quick Testing...
-                      </>
-                    ) : (
-                      '⚡ QUICK Test (Anti-Timeout)'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-occasion-bundles-direct', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🎯 Direct Occasion-Bundles Test Results:', data);
-                        
-                        if (data.success) {
-                          showMessage(`✅ ${data.conclusion}`, 'success');
-                        } else {
-                          const message = data.conclusion || `❌ Test failed: ${data.error?.message || 'Unknown error'}`;
-                          const messageType = (data.error?.status === 401 || data.error?.status === 403 || data.error?.status === 400) ? 'info' : 'error';
-                          showMessage(message, messageType);
-                        }
-                        
-                        // Show detailed error info for 400 Bad Request
-                        if (data.error?.is400BadRequest && data.error?.responseData) {
-                          console.log('🔧 400 Bad Request Details:', data.error.responseData);
-                          console.log('💡 This means the endpoint exists but our payload needs fixing!');
-                        }
-                        
-                        console.log('📊 Response Analysis:', data.responseAnalysis);
-                        console.log('📤 Payload Used:', data.payload);
-                      } catch (error) {
-                        showMessage('❌ Failed to test occasion-bundles directly', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Direct...
-                      </>
-                    ) : (
-                      '🎯 Test Direct Occasion-Bundles'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-payload-variations', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🧪 Payload Variations Test Results:', data);
-                        
-                        if (data.success) {
-                          const message = data.conclusion || `🧪 Tested ${data.summary.total} variations: ${data.summary.successful} successful, ${data.summary.badRequest} bad request, ${data.summary.unauthorized} unauthorized`;
-                          showMessage(message, data.summary.successful > 0 ? 'success' : 'info');
-                          
-                          console.log('📊 Summary:', data.summary);
-                          console.log('📋 Detailed Results:', data.results);
-                        } else {
-                          showMessage(`❌ Payload variations test failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test payload variations', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Variations...
-                      </>
-                    ) : (
-                      '🧪 Test Payload Variations'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-auth-methods', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🔐 Auth Methods Test Results:', data);
-                        
-                        if (data.success) {
-                          const message = data.conclusion || `🔐 Tested ${data.summary.total} auth methods: ${data.summary.successful} successful, ${data.summary.jsonResponses} JSON responses`;
-                          showMessage(message, data.summary.jsonResponses > 0 ? 'success' : 'info');
-                          
-                          console.log('📊 Auth Summary:', data.summary);
-                          console.log('📋 Auth Results:', data.results);
-                          console.log('💡 Recommendations:', data.recommendations);
-                        } else {
-                          showMessage(`❌ Auth methods test failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test auth methods', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-teal-600 hover:bg-teal-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Auth...
-                      </>
-                    ) : (
-                      '🔐 Test Authentication Methods'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-real-session', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🎯 Real Session Test Results:', data);
-                        
-                        if (data.success) {
-                          const message = data.conclusion || `🎯 Real Session: ${data.summary.successful}/${data.summary.total} successful, ${data.summary.withOccasions} with occasions!`;
-                          showMessage(message, data.summary.withOccasions > 0 ? 'success' : 'info');
-                          
-                          console.log('📊 Real Session Summary:', data.summary);
-                          console.log('📋 Real Session Results:', data.results);
-                          console.log('💡 Next Steps:', data.nextSteps);
-                          
-                          if (data.summary.withOccasions > 0) {
-                            console.log('🎉 BREAKTHROUGH! We can access real occasion data!');
-                          }
-                        } else {
-                          showMessage(`❌ Real session test failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test real session', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-pink-600 hover:bg-pink-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Real Session...
-                      </>
-                    ) : (
-                      '🎯 Test REAL Session (with cURL data!)'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/parse-real-response', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🕐 Time Manipulation & Response Parsing Results:', data);
-                        
-                        if (data.success) {
-                          const message = data.conclusion || `🕐 Time Test: ${data.summary.successful}/${data.summary.total} successful${data.summary.timeManipulationWorks ? ' - TIME MANIPULATION WORKS!' : ''}`;
-                          showMessage(message, data.summary.timeManipulationWorks ? 'success' : 'info');
-                          
-                          console.log('📊 Time Test Summary:', data.summary);
-                          console.log('📋 Time Test Results:', data.results);
-                          console.log('💡 Recommendations:', data.recommendations);
-                          console.log('🗺️ Location Analysis:', data.locationAnalysis);
-                          
-                          if (data.summary.timeManipulationWorks) {
-                            console.log('🎉 BREAKTHROUGH! We can extend session lifetime automatically!');
-                          }
-                          
-                          // Log occasion data
-                          data.results.forEach((result: any) => {
-                            if (result.success && result.occasionInfo) {
-                              console.log(`📍 ${result.name}:`, {
-                                total: result.occasionInfo.totalOccasions,
-                                locations: result.occasionInfo.locations,
-                                södertälje: result.occasionInfo.sodertaljeeSlots,
-                                dates: result.occasionInfo.dates
-                              });
-                            }
-                          });
-                        } else {
-                          showMessage(`❌ Time manipulation test failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test time manipulation', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-lime-600 hover:bg-lime-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing Time Magic...
-                      </>
-                    ) : (
-                      '🕐 Test Time Manipulation & Parse Data'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/quick-time-test', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('⚡ Quick Time Test Results:', data);
-                        
-                        if (data.success) {
-                          const message = data.conclusion || `⚡ Quick Test: ${data.summary.successful}/${data.summary.total} successful in ${data.performance.totalTime}`;
-                          showMessage(message, data.summary.timeManipulationWorks ? 'success' : 'info');
-                          
-                          console.log('📊 Quick Test Summary:', data.summary);
-                          console.log('📋 Quick Test Results:', data.results);
-                          console.log('💡 Recommendations:', data.recommendations);
-                          console.log('⏱️ Performance:', data.performance);
-                          
-                          if (data.summary.timeManipulationWorks) {
-                            console.log('🎉 BREAKTHROUGH! Time manipulation confirmed working!');
-                          }
-                        } else {
-                          showMessage(`❌ Quick time test failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to run quick time test', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Quick Testing...
-                      </>
-                    ) : (
-                      '⚡ Quick Time Test (Anti-Timeout)'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/test-v2-monitor', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            email: email,
-                            fromDate: fromDate,
-                            toDate: toDate
-                          })
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🚀 V2 Monitor Test Results:', data);
-                        
-                        if (data.success) {
-                          showMessage(`🚀 V2 Monitor test successful! ${data.sessionTest?.occasionCount || 0} occasions found`, 'success');
-                          
-                          console.log('📊 V2 Features:', data.features);
-                          console.log('🔧 Session Test:', data.sessionTest);
-                          console.log('📊 Monitor Status:', data.monitorStatus);
-                          console.log('💡 Next Steps:', data.nextSteps);
-                          console.log('🔗 API Structure:', data.apiStructure);
-                        } else {
-                          showMessage(`⚠️ V2 Monitor session issue: ${data.error}`, 'info');
-                          console.log('🔧 Session Test:', data.sessionTest);
-                          console.log('💡 Recommendations:', data.recommendations);
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to test V2 monitor', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-violet-600 hover:bg-violet-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Testing V2...
-                      </>
-                    ) : (
-                      '🚀 Test V2 Monitor (Working Session Format!)'
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        const response = await fetch('/api/session-refresh-helper', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        console.log('🔄 Session Refresh Helper Results:', data);
-                        
-                        if (data.success) {
-                          const sessionMsg = data.currentSessionStatus.status === 'active' 
-                            ? '✅ Current session still works!'
-                            : '❌ Session expired - need refresh';
-                          showMessage(sessionMsg, data.currentSessionStatus.status === 'active' ? 'success' : 'info');
-                          
-                          console.log('📊 Session Status:', data.currentSessionStatus);
-                          console.log('🔄 Refresh Instructions:', data.refreshInstructions);
-                          console.log('🕐 Time Manipulation:', data.timeManipulationStatus);
-                          console.log('💡 Next Steps:', data.nextSteps);
-                          
-                          if (data.currentSessionStatus.status === 'expired') {
-                            console.log('📋 HOW TO GET FRESH COOKIES:');
-                            data.refreshInstructions.steps.forEach((step: any) => console.log(step));
-                          }
-                        } else {
-                          showMessage(`❌ Session check failed: ${data.error}`, 'error');
-                        }
-                      } catch (error) {
-                        showMessage('❌ Failed to check session status', 'error');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mb-4 ${
-                      isLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Checking Session...
-                      </>
-                    ) : (
-                      '🔄 Check Session & Get Refresh Instructions'
-                    )}
-                  </button>
-                </div>
-
-                {/* Manual Discovery Instructions */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                  <h3 className="font-semibold text-yellow-800 mb-2">🔧 Manual API Discovery</h3>
-                  <p className="text-sm text-yellow-700 mb-2">
-                    If automated discovery fails, follow these steps to find the current API endpoints:
-                  </p>
-                  <ol className="text-xs text-yellow-600 space-y-1 list-decimal list-inside">
-                    <li>Open <code className="bg-yellow-100 px-1 rounded">https://fp.trafikverket.se</code> in a new tab</li>
-                    <li>Press <code className="bg-yellow-100 px-1 rounded">F12</code> to open DevTools</li>
-                    <li>Go to <strong>Network</strong> tab in DevTools</li>
-                    <li>Try to book a test (navigate through the booking process)</li>
-                    <li>Look for API calls in the Network tab (especially POST requests)</li>
-                    <li>Note the endpoint URLs that return slot/location data</li>
-                    <li>Report the working endpoints back to this project</li>
-                  </ol>
                 </div>
 
                 {/* Date Range */}
@@ -1020,45 +262,73 @@ export default function Home() {
                     📍 <strong>Monitoring:</strong> Södertälje & Farsta<br />
                     🚗 <strong>Test Type:</strong> Manual B License<br />
                     🔄 <strong>Check Interval:</strong> Every 5 minutes<br />
-                    📧 <strong>Email:</strong> Powered by SendGrid ⚡
+                    📧 <strong>Email:</strong> Powered by SendGrid ⚡<br />
+                    ⏰ <strong>Features:</strong> 24/7 monitoring with automatic session extension
                   </p>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Live Monitoring Buttons */}
                 {!status?.isActive ? (
                   <button
-                    onClick={startMonitoring}
-                    disabled={isLoading}
-                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-md transition duration-200 flex items-center justify-center"
+                    onClick={startLiveMonitoring}
+                    disabled={isLoading || !email}
+                    className={`w-full font-semibold py-4 px-4 rounded-md transition duration-200 flex items-center justify-center text-lg ${
+                      isLoading || !email
+                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                    }`}
                   >
                     {isLoading ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Starting...
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Starting Live Monitoring...
                       </>
                     ) : (
-                      '🚀 Start Monitoring'
+                      '🚀 START LIVE MONITORING'
                     )}
                   </button>
                 ) : (
                   <button
                     onClick={stopMonitoring}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200"
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-4 rounded-md transition duration-200 text-lg"
                   >
-                    🛑 Stop Monitoring
+                    🛑 STOP MONITORING
                   </button>
                 )}
               </div>
 
-              {/* Status Display */}
+              {/* Live Status Display */}
               {status?.isActive && (
                 <div className="mt-6 bg-green-50 border border-green-200 rounded-md p-4">
-                  <h3 className="font-semibold text-green-800 mb-2">✅ Monitoring Active</h3>
-                  <div className="text-sm text-green-700 space-y-1">
-                    <p>📧 Email: {status.email}</p>
-                    <p>📅 Period: {status.fromDate} to {status.toDate}</p>
-                    <p>🎯 Slots Found: {status.slotsFound}</p>
-                    <p>🕐 Last Check: {status.lastCheck}</p>
+                  <h3 className="font-semibold text-green-800 mb-3 flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    🚀 Live Monitoring Active
+                  </h3>
+                  <div className="text-sm text-green-700 space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p><strong>📧 Email:</strong> {status.email}</p>
+                        <p><strong>📅 Period:</strong> {status.fromDate} to {status.toDate}</p>
+                        <p><strong>🎯 Slots Found:</strong> {status.slotsFound || 0}</p>
+                      </div>
+                      <div>
+                        <p><strong>⏰ Interval:</strong> {status.checkInterval || '5 minutes'}</p>
+                        <p><strong>📧 Provider:</strong> {status.emailProvider || 'SendGrid'}</p>
+                        <p><strong>📍 Locations:</strong> {status.locations?.join(', ') || 'Södertälje, Farsta'}</p>
+                      </div>
+                    </div>
+                    
+                    {status.sessionWorking && (
+                      <div className="mt-3 p-2 bg-green-100 rounded text-green-800">
+                        ✅ Session Active • {status.occasionsFound || 0} occasions monitored • Auto-extending time
+                      </div>
+                    )}
+                    
+                    {status.lastCheck && (
+                      <p className="text-xs text-green-600 mt-2">
+                        🕐 Last Check: {status.lastCheck}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -1075,7 +345,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* Right Column - Sean Paul & Info */}
+            {/* Right Column - Motivation & Info */}
             <div className="space-y-6">
               {/* Judo Champion Section */}
               <div className="bg-white rounded-xl shadow-lg p-6 text-center">
@@ -1120,7 +390,7 @@ export default function Home() {
               {/* How It Works */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                  🔧 How It Works
+                  🔧 How Live Monitoring Works
                 </h3>
                 <div className="space-y-3 text-sm text-gray-600">
                   <div className="flex items-start">
@@ -1129,20 +399,24 @@ export default function Home() {
                   </div>
                   <div className="flex items-start">
                     <span className="text-blue-500 mr-2">2️⃣</span>
-                    <span>Our system monitors Trafikverket every 5 minutes</span>
+                    <span>Our V2 system monitors Trafikverket 24/7 every 5 minutes</span>
                   </div>
                   <div className="flex items-start">
                     <span className="text-blue-500 mr-2">3️⃣</span>
-                    <span>Get instant email alerts when slots open up</span>
+                    <span>Automatic session extension keeps monitoring alive</span>
                   </div>
                   <div className="flex items-start">
                     <span className="text-blue-500 mr-2">4️⃣</span>
+                    <span>Get instant SendGrid email alerts when slots open up</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="text-blue-500 mr-2">5️⃣</span>
                     <span>Book quickly before someone else takes it!</span>
                   </div>
                 </div>
               </div>
 
-              {/* Tips */}
+              {/* Pro Tips */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold mb-3 text-yellow-800">
                   💡 Pro Tips
@@ -1152,6 +426,8 @@ export default function Home() {
                   <li>• Check your email frequently</li>
                   <li>• Have your Bank ID ready to book instantly</li>
                   <li>• Early morning slots often become available</li>
+                  <li>• The system automatically extends session time</li>
+                  <li>• Only NEW slots trigger emails (no duplicates)</li>
                 </ul>
               </div>
             </div>
@@ -1160,7 +436,7 @@ export default function Home() {
           {/* Footer */}
           <div className="text-center mt-12 text-gray-500 text-sm">
             <p>🚗 Good luck with your driving test! 🍀</p>
-            <p className="mt-2">Made with ❤️ for future drivers</p>
+            <p className="mt-2">Made with ❤️ for future drivers • Powered by SendGrid & Next.js</p>
           </div>
         </div>
       </div>

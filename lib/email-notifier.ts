@@ -1,200 +1,245 @@
-interface EmailConfig {
-  sendgridApiKey: string;
-  fromEmail: string;
-}
+import sgMail from '@sendgrid/mail';
 
 export class EmailNotifier {
-  private config: EmailConfig;
+  private isConfigured: boolean = false;
 
-  constructor(config: EmailConfig) {
-    this.config = config;
+  constructor() {
+    this.initializeSendGrid();
   }
 
-  async sendEmail(to: string, subject: string, text: string): Promise<void> {
-    try {
-      if (!this.config.sendgridApiKey) {
-        console.log('🎉 DRIVING TEST SLOT FOUND! 🎉');
-        console.log(`📧 Email would be sent to: ${to}`);
-        console.log(`📋 Subject: ${subject}`);
-        console.log(`📝 Message: ${text}`);
-        console.log('🎵 Sean Paul says: "Just gimme the light... and your körkort!"');
-        
-        // No SendGrid API key configured
-        return;
-      }
-
-      const htmlContent = this.convertTextToHtml(text);
-
-      const emailData = {
-        personalizations: [
-          {
-            to: [{ email: to }],
-            subject: subject
-          }
-        ],
-        from: {
-          email: this.config.fromEmail,
-          name: "Trafikverket Monitor"
-        },
-        content: [
-          {
-            type: "text/plain",
-            value: text
-          },
-          {
-            type: "text/html",
-            value: htmlContent
-          }
-        ]
-      };
-
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.sendgridApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(emailData)
-      });
-
-      if (response.ok) {
-        console.log(`✅ Email sent successfully to ${to} via SendGrid`);
-      } else {
-        const error = await response.text();
-        console.error('❌ SendGrid API error:', error);
-        throw new Error(`SendGrid API error: ${response.status}`);
-      }
-      
-    } catch (error) {
-      console.error('❌ Failed to send email:', error);
-      throw error;
+  private initializeSendGrid(): void {
+    const apiKey = process.env.SENDGRID_API_KEY;
+    
+    if (apiKey) {
+      sgMail.setApiKey(apiKey);
+      this.isConfigured = true;
+      console.log('📧 SendGrid configured successfully');
+    } else {
+      console.warn('⚠️ SendGrid API key not found in environment variables');
+      this.isConfigured = false;
     }
   }
 
-  private convertTextToHtml(text: string): string {
-    // Convert plain text to HTML with basic formatting
-    let html = text
-      .replace(/\n/g, '<br>')
-      .replace(/📅/g, '📅')
-      .replace(/🕐/g, '🕐')
-      .replace(/📍/g, '📍')
-      .replace(/🚗/g, '🚗')
-      .replace(/🔗/g, '🔗')
-      .replace(/🏃‍♂️/g, '🏃‍♂️')
-      .replace(/🍀/g, '🍀')
-      .replace(/🎵/g, '🎵');
+  async sendNotification(email: string, slots: any[], locations: string[]): Promise<boolean> {
+    if (!this.isConfigured) {
+      console.error('❌ EmailNotifier not configured - missing SendGrid API key');
+      return false;
+    }
 
-    // Wrap in basic HTML structure
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Trafikverket Slot Alert</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-          }
-          .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          }
-          h1 {
-            color: #2c5530;
-            text-align: center;
-            margin-bottom: 30px;
-          }
-          .slot-info {
-            background-color: #e8f5e8;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid #4caf50;
-          }
-          .cta {
-            background-color: #4caf50;
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 5px;
-            display: inline-block;
-            font-weight: bold;
-            margin: 20px 0;
-          }
-          .sean-paul-section {
-            background-color: #fff3cd;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 30px;
-            text-align: center;
-            border: 1px solid #ffeaa7;
-          }
-          hr {
-            border: none;
-            border-top: 1px solid #eee;
-            margin: 20px 0;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>🚗 Driving Test Slots Available!</h1>
-          <div style="font-size: 16px;">
-            ${html}
+    try {
+      const locationStr = locations.join(' or ');
+      const slotCount = slots.length;
+      
+      // Create slot details
+      const slotDetails = slots.map(slot => {
+        const date = new Date(slot.startTime);
+        const dateStr = date.toLocaleDateString('sv-SE');
+        const timeStr = date.toLocaleTimeString('sv-SE', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+        
+        return `📅 ${dateStr} at ${timeStr} in ${slot.location}`;
+      }).join('\n');
+
+      const subject = `🚗 ${slotCount} driving test slot${slotCount > 1 ? 's' : ''} available in ${locationStr}!`;
+      
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px; overflow: hidden;">
+          <div style="padding: 30px; text-align: center;">
+            <h1 style="margin: 0 0 20px 0; font-size: 28px;">🚗 DRIVING TEST ALERT!</h1>
+            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h2 style="margin: 0 0 15px 0; color: #FFD700;">
+                ${slotCount} slot${slotCount > 1 ? 's' : ''} available in ${locationStr}!
+              </h2>
+              <div style="text-align: left; background: rgba(255,255,255,0.9); color: #333; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                ${slotDetails.split('\n').map(slot => `<div style="margin: 5px 0;">${slot}</div>`).join('')}
+              </div>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin: 20px 0;">
+              <p style="margin: 5px 0; font-size: 16px;">⚡ <strong>Book NOW at:</strong></p>
+              <a href="https://fp.trafikverket.se" style="color: #FFD700; text-decoration: none; font-size: 18px; font-weight: bold;">
+                fp.trafikverket.se
+              </a>
+            </div>
+            
+            <div style="margin: 25px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+              <p style="margin: 0; font-style: italic; font-size: 18px;">
+                "me want buy moto, me want build house"
+              </p>
+              <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;">- Sean Paul motivation 🎵</p>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.3);">
+              <p style="margin: 0; font-size: 14px; opacity: 0.8;">
+                Powered by Trafikverket Monitor ⚡ SendGrid
+              </p>
+            </div>
           </div>
-          
-          <div class="sean-paul-section">
-            <h3>🎵 Sean Paul says:</h3>
-            <p><em>"me want buy moto, me want build house"</em></p>
-            <p>🎶 Good luck with your test! 🎶</p>
-          </div>
-          
-          <hr>
-          <p style="text-align: center; color: #666; font-size: 14px;">
-            This notification was sent by the Trafikverket Monitor.<br>
-            Made with ❤️ for future drivers.
-          </p>
         </div>
-      </body>
-      </html>
-    `;
+      `;
+
+      const textContent = `
+🚗 DRIVING TEST ALERT!
+
+${slotCount} slot${slotCount > 1 ? 's' : ''} available in ${locationStr}!
+
+${slotDetails}
+
+⚡ Book NOW at: https://fp.trafikverket.se
+
+"me want buy moto, me want build house" - Sean Paul 🎵
+
+Powered by Trafikverket Monitor
+      `.trim();
+
+      const msg = {
+        to: email,
+        from: {
+          email: 'monitor@trafikverket-alerts.com',
+          name: 'Trafikverket Monitor'
+        },
+        subject: subject,
+        text: textContent,
+        html: htmlContent,
+        trackingSettings: {
+          clickTracking: {
+            enable: false
+          }
+        }
+      };
+
+      await sgMail.send(msg);
+      
+      console.log(`✅ Email notification sent successfully to ${email}`);
+      console.log(`📧 Subject: ${subject}`);
+      console.log(`🎯 Slots: ${slotCount} in ${locationStr}`);
+      
+      return true;
+
+    } catch (error: any) {
+      console.error('❌ Failed to send email notification:', error);
+      
+      if (error.response) {
+        console.error('📧 SendGrid error details:', {
+          status: error.response.status,
+          body: error.response.body
+        });
+      }
+      
+      return false;
+    }
   }
 
-  async testConnection(): Promise<boolean> {
+  async sendTestEmail(email: string): Promise<{ success: boolean; details?: string }> {
+    if (!this.isConfigured) {
+      return {
+        success: false,
+        details: 'SendGrid not configured - missing API key'
+      };
+    }
+
     try {
-      if (!this.config.sendgridApiKey) {
-        console.log('ℹ️ SendGrid API key not configured - test skipped');
-        return true; // Don't fail if email is not configured
-      }
+      const subject = '🧪 Test Email from Trafikverket Monitor';
+      
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 10px; overflow: hidden;">
+          <div style="padding: 30px; text-align: center;">
+            <h1 style="margin: 0 0 20px 0; font-size: 28px;">🧪 Test Email Success!</h1>
+            
+            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h2 style="margin: 0 0 15px 0; color: #FFD700;">✅ Email Configuration Working!</h2>
+              <p style="margin: 10px 0; font-size: 16px;">
+                Your email setup is working perfectly. You'll receive notifications when driving test slots become available in Södertälje or Farsta.
+              </p>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin: 20px 0;">
+              <p style="margin: 5px 0; font-size: 16px;">🎯 <strong>Monitoring Features:</strong></p>
+              <div style="text-align: left; margin: 10px 0;">
+                <div style="margin: 5px 0;">📍 Södertälje & Farsta locations</div>
+                <div style="margin: 5px 0;">⏰ 5-minute check intervals</div>
+                <div style="margin: 5px 0;">🚀 24/7 live monitoring</div>
+                <div style="margin: 5px 0;">⚡ Automatic session extension</div>
+                <div style="margin: 5px 0;">📧 Instant SendGrid notifications</div>
+              </div>
+            </div>
+            
+            <div style="margin: 25px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+              <p style="margin: 0; font-style: italic; font-size: 18px;">
+                "five million and footi nooti shawties! baby girl"
+              </p>
+              <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;">- Sean Paul motivation 🎵</p>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.3);">
+              <p style="margin: 0; font-size: 14px; opacity: 0.8;">
+                Test email sent via SendGrid ⚡ Ready to monitor!
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
 
-      // Test SendGrid API connection with a simple request
-      const response = await fetch('https://api.sendgrid.com/v3/user/profile', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.config.sendgridApiKey}`,
-          'Content-Type': 'application/json'
+      const textContent = `
+🧪 Test Email Success!
+
+✅ Email Configuration Working!
+
+Your email setup is working perfectly. You'll receive notifications when driving test slots become available in Södertälje or Farsta.
+
+🎯 Monitoring Features:
+📍 Södertälje & Farsta locations
+⏰ 5-minute check intervals  
+🚀 24/7 live monitoring
+⚡ Automatic session extension
+📧 Instant SendGrid notifications
+
+"five million and footi nooti shawties! baby girl" - Sean Paul 🎵
+
+Test email sent via SendGrid ⚡ Ready to monitor!
+      `.trim();
+
+      const msg = {
+        to: email,
+        from: {
+          email: 'monitor@trafikverket-alerts.com',
+          name: 'Trafikverket Monitor'
+        },
+        subject: subject,
+        text: textContent,
+        html: htmlContent,
+        trackingSettings: {
+          clickTracking: {
+            enable: false
+          }
         }
-      });
+      };
 
-      if (response.ok) {
-        console.log('✅ SendGrid connection test successful');
-        return true;
-      } else {
-        console.error('❌ SendGrid connection test failed:', response.status);
-        return false;
+      await sgMail.send(msg);
+      
+      console.log(`✅ Test email sent successfully to ${email}`);
+      return {
+        success: true,
+        details: 'Test email sent successfully via SendGrid'
+      };
+
+    } catch (error: any) {
+      console.error('❌ Failed to send test email:', error);
+      
+      let errorDetails = 'Unknown SendGrid error';
+      
+      if (error.response) {
+        errorDetails = `SendGrid error ${error.response.status}: ${JSON.stringify(error.response.body)}`;
+      } else if (error.message) {
+        errorDetails = error.message;
       }
-    } catch (error) {
-      console.error('❌ SendGrid connection test failed:', error);
-      return false;
+      
+      return {
+        success: false,
+        details: errorDetails
+      };
     }
   }
 } 

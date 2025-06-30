@@ -552,10 +552,20 @@ export class TrafikverketMonitor {
       emailBody += `Good luck with your driving test! 🍀\n\n`;
       emailBody += `PS: While you're waiting, why not listen to some Sean Paul? 🎵`;
 
-      await this.config.emailNotifier.sendEmail(
+      // Convert TestSlot[] to format expected by sendNotification
+      const slotsForEmail = validSlots.map(slot => ({
+        startTime: `${slot.date}T${slot.time}:00.000Z`,
+        location: slot.location,
+        testType: slot.testType
+      }));
+
+      // Get unique locations
+      const locations = [...new Set(validSlots.map(slot => slot.location))];
+
+      await this.config.emailNotifier.sendNotification(
         this.config.email,
-        subject,
-        emailBody
+        slotsForEmail,
+        locations
       );
 
       console.log(`📧 Email notification sent to ${this.config.email} for ${validSlots.length} valid slots`);
